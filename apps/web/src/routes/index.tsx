@@ -2,6 +2,7 @@ import { api } from "@gitvex/backend/convex/_generated/api";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 import { fetchQuery } from "@/lib/auth-server";
 
 export const getSession = createServerFn().handler(async () => {
@@ -20,7 +21,7 @@ function HomeComponent() {
       <div className="grid gap-6">
         <section className="rounded-lg border p-4">
           <h2 className="mb-2 font-medium">API Status</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center gap-2">
             <Button
               onClick={async () => {
                 const data = await getSession();
@@ -28,6 +29,26 @@ function HomeComponent() {
               }}
             >
               Check Auth
+            </Button>
+            <Button
+              onClick={async () => {
+                const { data, error } = await authClient.apiKey.create({
+                  name: "test-api-key",
+                  prefix: "gvx_",
+                });
+
+                console.log({ data, error });
+              }}
+            >
+              Create API Keys
+            </Button>
+            <Button
+              onClick={async () => {
+                const { data, error } = await authClient.apiKey.list();
+                console.log({ data, error });
+              }}
+            >
+              List API Keys
             </Button>
           </div>
         </section>
