@@ -113,6 +113,63 @@ export class GitService {
     }
   }
 
+  async readObject(oid: string) {
+    try {
+      return await git.readObject({
+        fs: this.fs,
+        gitdir: this.gitdir,
+        oid,
+      });
+    } catch (error) {
+      logger.warn(`(read-object) Failed to read object ${oid}: ${error}`);
+      return null;
+    }
+  }
+
+  async readObjectForLsRefs(oid: string) {
+    try {
+      const result = await git.readObject({
+        fs: this.fs,
+        gitdir: this.gitdir,
+        oid,
+        format: "content",
+      });
+
+      // Ensure we return string or Uint8Array
+      const object = result.object;
+      if (typeof object === "string" || object instanceof Uint8Array) {
+        return {
+          type: result.type,
+          object,
+        };
+      }
+
+      // If it's a parsed object, we need to serialize it
+      // This shouldn't happen with format: "content", but handle it just in case
+      return {
+        type: result.type,
+        object: new TextEncoder().encode(JSON.stringify(object)),
+      };
+    } catch (error) {
+      logger.warn(
+        `(read-object-ls-refs) Failed to read object ${oid}: ${error}`
+      );
+      return null;
+    }
+  }
+
+  async expandRef(ref: string) {
+    try {
+      return await git.expandRef({
+        fs: this.fs,
+        gitdir: this.gitdir,
+        ref,
+      });
+    } catch {
+      return null;
+    }
+  }
+
   async indexPack(filePath: string) {
     await git.indexPack({
       fs: this.fs,

@@ -169,3 +169,124 @@ export async function buildReportStatus(
     },
   });
 }
+
+export function parseCommand(data: Uint8Array) {
+  let command = "";
+  const args: string[] = [];
+  let beforeDelim = true;
+
+  let offset = 0;
+  while (offset < data.length) {
+    const packet = PktLine.decode(data.subarray(offset));
+
+    const lengthHex = PktLine.decodeText(data.slice(offset, offset + 4));
+    const specialPackets = [PktLine.DELIM, PktLine.FLUSH, PktLine.RESPONSE_END];
+    const packetLength = specialPackets.includes(lengthHex)
+      ? 4
+      : Number.parseInt(lengthHex, 16);
+
+    offset += packetLength;
+
+    if (packet.type === "delim") {
+      beforeDelim = false;
+      continue;
+    }
+
+    if (packet.type === "flush" || packet.type === "response-end") {
+      break;
+    }
+
+    if (packet.type === "data") {
+      const line = PktLine.decodeText(packet.data).replace(/\r?\n$/, "");
+
+      if (beforeDelim) {
+        if (line.startsWith("command=")) {
+          command = line.replace("command=", "");
+        }
+      } else {
+        args.push(line);
+      }
+    }
+  }
+
+  // Fallback: try to extract command from raw text if not found
+  if (!command) {
+    const text = PktLine.decodeText(data);
+    const match = text.match(/command=([a-z-]+)/);
+    command = match ? match[1] : "";
+  }
+
+  return { command, args };
+}
+
+export async function buildLsRefsResponse(
+  refs: Array<{ ref: string; oid: string }>,
+  args: string[],
+  symbolicHead: string | null,
+  readObject: (
+    oid: string
+  ) => Promise<{ type: string; object: Uint8Array | string } | null>
+) {
+  const lines: Uint8Array[] = [];
+
+  // Parse arguments
+  const refPrefixes: string[] = [];
+  let includePeel = false;
+  let includeSymrefs = false;
+
+  for (const arg of args) {
+    if (arg === "peel") {
+      includePeel = true;
+    } else if (arg === "symrefs") {
+      includeSymrefs = true;
+    } else if (arg.startsWith("ref-prefix ")) {
+      refPrefixes.push(arg.slice("ref-prefix ".length));
+    }
+  }
+
+  // Filter refs by prefix if specified
+  let filteredRefs = refs;
+  if (refPrefixes.length > 0) {
+    filteredRefs = refs.filter((ref) =>
+      refPrefixes.some((prefix) => ref.ref.startsWith(prefix))
+    );
+  }
+
+  for (const { ref, oid } of filteredRefs) {
+    let line = `${oid} ${ref}`;
+
+    // Add symref attribute if requested and this is HEAD
+    if (includeSymrefs && ref === "HEAD" && symbolicHead) {
+      line += ` symref-target:${symbolicHead}`;
+    }
+
+    lines.push(PktLine.encode(`${line}\n`));
+
+    // Add peeled reference for annotated tags if requested
+    if (includePeel && ref.startsWith("refs/tags/")) {
+      const obj = await readObject(oid);
+      if (obj && obj.type === "tag") {
+        // Parse the tag object to get the target commit
+        const tagContent =
+          typeof obj.object === "string"
+            ? obj.object
+            : new TextDecoder().decode(obj.object);
+        const objectMatch = tagContent.match(/^object ([0-9a-f]{40})/m);
+        if (objectMatch) {
+          const peeledOid = objectMatch[1];
+          lines.push(PktLine.encode(`${peeledOid} ${ref}^{}\n`));
+        }
+      }
+    }
+  }
+
+  lines.push(PktLine.encodeFlush());
+
+  return new Response(PktLine.decodeText(PktLine.mergeLines(lines)), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/x-git-upload-pack-result",
+      "Cache-Control": "no-cache",
+    },
+  });
+}

@@ -1,6 +1,11 @@
 import { DurableObject, env } from "cloudflare:workers";
 import { Fs } from "dofs";
-import { buildReportStatus, parseReceivePackRequest } from "@/git/protocol";
+import {
+  buildLsRefsResponse,
+  buildReportStatus,
+  parseCommand,
+  parseReceivePackRequest,
+} from "@/git/protocol";
 import { GitService } from "@/git/service";
 import { IsoGitFs } from "./fs";
 import { createLogger } from "./logger";
@@ -39,9 +44,15 @@ export class Repo extends DurableObject<Env> {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
+    const data = new Uint8Array(await request.arrayBuffer());
+
     if (pathname === "/git-receive-pack" && request.method === "POST") {
-      const data = new Uint8Array(await request.arrayBuffer());
       const result = await this.receivePack(data);
+      return result;
+    }
+
+    if (pathname === "/git-upload-pack" && request.method === "POST") {
+      const result = await this.uploadPack(data);
       return result;
     }
 
@@ -95,5 +106,26 @@ export class Repo extends DurableObject<Env> {
     const results = await this.git.applyRefUpdates(commands, atomic);
 
     return buildReportStatus(results, true);
+  }
+
+  async uploadPack(data: Uint8Array) {
+    const { command, args } = parseCommand(data);
+
+    if (command === "ls-refs") {
+      const { refs, symbolicHead } = await this.git.listRefs();
+
+      const response = await buildLsRefsResponse(
+        refs,
+        args,
+        symbolicHead,
+        async (oid: string) => this.git.readObjectForLsRefs(oid)
+      );
+
+      return response;
+    }
+    if (command === "fetch") {
+    }
+
+    return new Response("Unsupported command", { status: 400 });
   }
 }

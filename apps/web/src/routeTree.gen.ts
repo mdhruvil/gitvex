@@ -13,6 +13,7 @@ import { Route as TodosRouteImport } from './routes/todos'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as UserRepoGitUploadPackRouteImport } from './routes/$user/$repo/git-upload-pack'
 import { Route as UserRepoGitReceivePackRouteImport } from './routes/$user/$repo/git-receive-pack'
 import { Route as UserRepoInfoRefsRouteImport } from './routes/$user/$repo/info/refs'
 
@@ -36,6 +37,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UserRepoGitUploadPackRoute = UserRepoGitUploadPackRouteImport.update({
+  id: '/$user/$repo/git-upload-pack',
+  path: '/$user/$repo/git-upload-pack',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UserRepoGitReceivePackRoute = UserRepoGitReceivePackRouteImport.update({
   id: '/$user/$repo/git-receive-pack',
   path: '/$user/$repo/git-receive-pack',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/todos': typeof TodosRoute
   '/$user/$repo/git-receive-pack': typeof UserRepoGitReceivePackRoute
+  '/$user/$repo/git-upload-pack': typeof UserRepoGitUploadPackRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/$user/$repo/info/refs': typeof UserRepoInfoRefsRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/todos': typeof TodosRoute
   '/$user/$repo/git-receive-pack': typeof UserRepoGitReceivePackRoute
+  '/$user/$repo/git-upload-pack': typeof UserRepoGitUploadPackRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/$user/$repo/info/refs': typeof UserRepoInfoRefsRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/todos': typeof TodosRoute
   '/$user/$repo/git-receive-pack': typeof UserRepoGitReceivePackRoute
+  '/$user/$repo/git-upload-pack': typeof UserRepoGitUploadPackRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/$user/$repo/info/refs': typeof UserRepoInfoRefsRoute
 }
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/todos'
     | '/$user/$repo/git-receive-pack'
+    | '/$user/$repo/git-upload-pack'
     | '/api/auth/$'
     | '/$user/$repo/info/refs'
   fileRoutesByTo: FileRoutesByTo
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/todos'
     | '/$user/$repo/git-receive-pack'
+    | '/$user/$repo/git-upload-pack'
     | '/api/auth/$'
     | '/$user/$repo/info/refs'
   id:
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/todos'
     | '/$user/$repo/git-receive-pack'
+    | '/$user/$repo/git-upload-pack'
     | '/api/auth/$'
     | '/$user/$repo/info/refs'
   fileRoutesById: FileRoutesById
@@ -104,6 +116,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   TodosRoute: typeof TodosRoute
   UserRepoGitReceivePackRoute: typeof UserRepoGitReceivePackRoute
+  UserRepoGitUploadPackRoute: typeof UserRepoGitUploadPackRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   UserRepoInfoRefsRoute: typeof UserRepoInfoRefsRoute
 }
@@ -138,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$user/$repo/git-upload-pack': {
+      id: '/$user/$repo/git-upload-pack'
+      path: '/$user/$repo/git-upload-pack'
+      fullPath: '/$user/$repo/git-upload-pack'
+      preLoaderRoute: typeof UserRepoGitUploadPackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$user/$repo/git-receive-pack': {
       id: '/$user/$repo/git-receive-pack'
       path: '/$user/$repo/git-receive-pack'
@@ -160,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   TodosRoute: TodosRoute,
   UserRepoGitReceivePackRoute: UserRepoGitReceivePackRoute,
+  UserRepoGitUploadPackRoute: UserRepoGitUploadPackRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   UserRepoInfoRefsRoute: UserRepoInfoRefsRoute,
 }
