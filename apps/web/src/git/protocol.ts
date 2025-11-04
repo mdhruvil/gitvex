@@ -219,6 +219,106 @@ export function parseCommand(data: Uint8Array) {
   return { command, args };
 }
 
+export type FetchRequest = {
+  wants: string[];
+  haves: string[];
+  done: boolean;
+  capabilities: {
+    thinPack: boolean;
+    noProgress: boolean;
+    includeTag: boolean;
+    ofsDelta: boolean;
+    sidebandAll: boolean;
+  };
+  shallowOptions?: {
+    shallow: string[];
+    deepen?: number;
+    deepenRelative?: boolean;
+    deepenSince?: number;
+    deepenNot?: string[];
+  };
+  filterSpec?: string;
+};
+
+export function parseFetchRequest(
+  _data: Uint8Array,
+  args: string[]
+): FetchRequest {
+  const wants: string[] = [];
+  const haves: string[] = [];
+  let done = false;
+  const capabilities = {
+    thinPack: false,
+    noProgress: false,
+    includeTag: false,
+    ofsDelta: false,
+    sidebandAll: false,
+  };
+  const shallow: string[] = [];
+  let deepen: number | undefined;
+  let deepenRelative = false;
+  let deepenSince: number | undefined;
+  const deepenNot: string[] = [];
+  let filterSpec: string | undefined;
+
+  // Parse arguments from the command section
+  for (const arg of args) {
+    if (arg.startsWith("want ")) {
+      wants.push(arg.slice("want ".length));
+    } else if (arg.startsWith("have ")) {
+      haves.push(arg.slice("have ".length));
+    } else if (arg === "done") {
+      done = true;
+    } else if (arg === "thin-pack") {
+      capabilities.thinPack = true;
+    } else if (arg === "no-progress") {
+      capabilities.noProgress = true;
+    } else if (arg === "include-tag") {
+      capabilities.includeTag = true;
+    } else if (arg === "ofs-delta") {
+      capabilities.ofsDelta = true;
+    } else if (arg === "sideband-all") {
+      capabilities.sidebandAll = true;
+    } else if (arg.startsWith("shallow ")) {
+      shallow.push(arg.slice("shallow ".length));
+    } else if (arg.startsWith("deepen ")) {
+      deepen = Number.parseInt(arg.slice("deepen ".length), 10);
+    } else if (arg === "deepen-relative") {
+      deepenRelative = true;
+    } else if (arg.startsWith("deepen-since ")) {
+      deepenSince = Number.parseInt(arg.slice("deepen-since ".length), 10);
+    } else if (arg.startsWith("deepen-not ")) {
+      deepenNot.push(arg.slice("deepen-not ".length));
+    } else if (arg.startsWith("filter ")) {
+      filterSpec = arg.slice("filter ".length);
+    }
+  }
+
+  const shallowOptions =
+    shallow.length > 0 ||
+    deepen ||
+    deepenRelative ||
+    deepenSince ||
+    deepenNot.length > 0
+      ? {
+          shallow,
+          deepen,
+          deepenRelative,
+          deepenSince,
+          deepenNot,
+        }
+      : undefined;
+
+  return {
+    wants,
+    haves,
+    done,
+    capabilities,
+    shallowOptions,
+    filterSpec,
+  };
+}
+
 export async function buildLsRefsResponse(
   refs: Array<{ ref: string; oid: string }>,
   args: string[],
@@ -282,7 +382,135 @@ export async function buildLsRefsResponse(
 
   lines.push(PktLine.encodeFlush());
 
-  return new Response(PktLine.decodeText(PktLine.mergeLines(lines)), {
+  // @ts-expect-error ts is complaining that Uint8Array is not assignable to BodyInit
+  return new Response(PktLine.mergeLines(lines), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/x-git-upload-pack-result",
+      "Cache-Control": "no-cache",
+    },
+  });
+}
+
+/**
+ * Parse packfile header to extract object count.
+ * Packfile format: 'PACK' + version (4 bytes) + object count (4 bytes)
+ *
+ * @param packfile - The packfile data
+ * @returns Object count, or null if header is invalid
+ */
+function parsePackfileObjectCount(packfile: Uint8Array): number | null {
+  // Check minimum size: 'PACK' (4) + version (4) + count (4) = 12 bytes
+  if (packfile.length < 12) {
+    return null;
+  }
+
+  // Verify 'PACK' signature
+  const signature = new TextDecoder().decode(packfile.slice(0, 4));
+  if (signature !== "PACK") {
+    return null;
+  }
+
+  // Read object count (big-endian 32-bit integer at offset 8)
+  // Using DataView for cleaner binary parsing
+  const view = new DataView(
+    packfile.buffer,
+    packfile.byteOffset,
+    packfile.byteLength
+  );
+  const count = view.getUint32(8, false); // false = big-endian
+
+  return count;
+}
+
+export type FetchResponseOptions = {
+  commonCommits: string[];
+  packfileData: Uint8Array | null | undefined;
+  noProgress: boolean;
+  done: boolean;
+  objectCount?: number;
+};
+
+export async function buildFetchResponse(options: FetchResponseOptions) {
+  const lines: Uint8Array[] = [];
+  const { commonCommits, packfileData, noProgress, done } = options;
+
+  // Protocol v2 spec: If client sent "done", acknowledgments section MUST be omitted
+  if (!done) {
+    // Acknowledgments section (only sent during negotiation, not when done=true)
+    lines.push(PktLine.encode("acknowledgments\n"));
+
+    if (commonCommits.length === 0) {
+      lines.push(PktLine.encode("NAK\n"));
+    } else {
+      for (const oid of commonCommits) {
+        lines.push(PktLine.encode(`ACK ${oid}\n`));
+      }
+    }
+
+    // Send "ready" to indicate server is ready to send packfile
+    lines.push(PktLine.encode("ready\n"));
+
+    // Delimiter separates acknowledgments section from packfile section
+    lines.push(PktLine.encodeDelim());
+  }
+
+  // Packfile section
+  if (packfileData && packfileData.length > 0) {
+    // Packfile section header - required by protocol v2
+    lines.push(PktLine.encode("packfile\n"));
+
+    // Parse object count from packfile header
+    const objectCount =
+      options.objectCount ?? parsePackfileObjectCount(packfileData);
+
+    // Send progress messages if not suppressed
+    if (!noProgress && objectCount !== null) {
+      lines.push(
+        PktLine.encodeProgress(
+          `remote: Counting objects: ${objectCount}, done.\r\n`
+        )
+      );
+      lines.push(
+        PktLine.encodeProgress(
+          `remote: Compressing objects: 100% (${objectCount}/${objectCount}), done.\r\n`
+        )
+      );
+    }
+
+    // Split packfile into chunks and multiplex with side-band
+    // Side-band format: pkt-line(stream-code + data)
+    // Stream code: 1 = pack data, 2 = progress, 3 = error
+    for (
+      let offset = 0;
+      offset < packfileData.length;
+      offset += PktLine.MAX_SIDEBAND_PAYLOAD
+    ) {
+      const end = Math.min(
+        offset + PktLine.MAX_SIDEBAND_PAYLOAD,
+        packfileData.length
+      );
+      const chunk = packfileData.subarray(offset, end);
+
+      lines.push(
+        PktLine.encodeSideband(PktLine.SIDEBAND_CHANNEL_PACKFILE, chunk)
+      );
+    }
+
+    // Send final progress message if not suppressed
+    if (!noProgress && objectCount !== null) {
+      lines.push(
+        PktLine.encodeProgress(
+          `remote: Total ${objectCount} (delta 0), reused ${objectCount} (delta 0), pack-reused 0        \r\n`
+        )
+      );
+    }
+
+    lines.push(PktLine.encodeFlush());
+  }
+
+  // @ts-expect-error ts is complaining that Uint8Array is not assignable to BodyInit
+  return new Response(PktLine.mergeLines(lines), {
     status: 200,
     headers: {
       "Content-Type": "application/x-git-upload-pack-result",

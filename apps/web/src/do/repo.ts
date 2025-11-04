@@ -1,9 +1,11 @@
 import { DurableObject, env } from "cloudflare:workers";
 import { Fs } from "dofs";
 import {
+  buildFetchResponse,
   buildLsRefsResponse,
   buildReportStatus,
   parseCommand,
+  parseFetchRequest,
   parseReceivePackRequest,
 } from "@/git/protocol";
 import { GitService } from "@/git/service";
@@ -123,7 +125,48 @@ export class Repo extends DurableObject<Env> {
 
       return response;
     }
+
     if (command === "fetch") {
+      const fetchRequest = parseFetchRequest(data, args);
+
+      // Find common commits between client and server
+      const commonCommits = await this.git.findCommonCommits(
+        fetchRequest.haves
+      );
+
+      // If client sent "done", we need to generate and send packfile
+      let packfileData: Uint8Array | undefined | null = null;
+
+      if (fetchRequest.done && fetchRequest.wants.length > 0) {
+        // Walk the object graph to find all objects reachable from wants but not from haves
+        try {
+          const objectsToPack = await this.git.collectObjectsForPack(
+            fetchRequest.wants,
+            fetchRequest.haves
+          );
+
+          logger.info(
+            `(upload-pack-fetch) Packing ${objectsToPack.length} objects for wants: ${fetchRequest.wants.join(", ")}`
+          );
+
+          packfileData = await this.git.packObjects(objectsToPack);
+        } catch (error) {
+          logger.error("(upload-pack-fetch) Failed to pack objects: ", error);
+          return new Response(
+            `ERR pack-objects failed: ${(error as Error).message}`,
+            { status: 500 }
+          );
+        }
+      }
+
+      const response = await buildFetchResponse({
+        commonCommits,
+        packfileData,
+        noProgress: fetchRequest.capabilities.noProgress,
+        done: fetchRequest.done,
+      });
+
+      return response;
     }
 
     return new Response("Unsupported command", { status: 400 });

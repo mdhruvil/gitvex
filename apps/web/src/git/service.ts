@@ -179,6 +179,123 @@ export class GitService {
     });
   }
 
+  async collectObjectsForPack(
+    wants: string[],
+    haves: string[]
+  ): Promise<string[]> {
+    const objectsToSend = new Set<string>();
+    const visited = new Set<string>();
+    const haveSet = new Set(haves);
+
+    // BFS queue to traverse the commit graph
+    const queue: string[] = [...wants];
+
+    while (queue.length > 0) {
+      const oid = queue.shift();
+      if (!oid || visited.has(oid)) continue;
+
+      visited.add(oid);
+
+      // If the client already has this object, don't include it or traverse further
+      if (haveSet.has(oid)) continue;
+
+      // Add this object to the set of objects to send
+      objectsToSend.add(oid);
+
+      try {
+        const { type } = await git.readObject({
+          fs: this.fs,
+          gitdir: this.gitdir,
+          oid,
+        });
+
+        if (type === "commit") {
+          // Parse commit to get tree and parent OIDs
+          const commit = await git.readCommit({
+            fs: this.fs,
+            gitdir: this.gitdir,
+            oid,
+          });
+
+          // Add tree to queue
+          queue.push(commit.commit.tree);
+
+          // Add parent commits to queue
+          for (const parent of commit.commit.parent) {
+            queue.push(parent);
+          }
+        } else if (type === "tree") {
+          // Parse tree to get all entries (blobs and subtrees)
+          const tree = await git.readTree({
+            fs: this.fs,
+            gitdir: this.gitdir,
+            oid,
+          });
+
+          // Add all tree entries to queue
+          for (const entry of tree.tree) {
+            queue.push(entry.oid);
+          }
+        } else if (type === "tag") {
+          // Parse tag to get the object it points to
+          const tag = await git.readTag({
+            fs: this.fs,
+            gitdir: this.gitdir,
+            oid,
+          });
+
+          queue.push(tag.tag.object);
+        }
+        // For blobs, we just add them to the set (no traversal needed)
+      } catch (error) {
+        logger.error(
+          `(collect-objects) Failed to read object ${oid}: ${error}`
+        );
+        // Continue processing other objects even if one fails
+      }
+    }
+
+    return Array.from(objectsToSend);
+  }
+
+  async packObjects(oids: string[]) {
+    const result = await git.packObjects({
+      fs: this.fs,
+      dir: this.gitdir,
+      gitdir: this.gitdir,
+      oids,
+      write: false,
+    });
+
+    return result.packfile;
+  }
+
+  async hasObject(oid: string): Promise<boolean> {
+    try {
+      await git.readObject({
+        fs: this.fs,
+        gitdir: this.gitdir,
+        oid,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async findCommonCommits(haves: string[]): Promise<string[]> {
+    const common: string[] = [];
+
+    for (const oid of haves) {
+      const hasObject = await this.hasObject(oid);
+      if (hasObject) {
+        common.push(oid);
+      }
+    }
+
+    return common;
+  }
+
   // TODO: simplify this and some docs
   async applyRefUpdates(
     commands: Array<{ oldOid: string; newOid: string; ref: string }>,
