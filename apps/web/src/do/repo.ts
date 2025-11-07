@@ -241,6 +241,11 @@ class RepoBase extends DurableObject<Env> {
     });
     return commits;
   }
+
+  async getBranches() {
+    const branches = await this.git.listBranches();
+    return branches;
+  }
 }
 
 // Export your named class as defined in your wrangler config

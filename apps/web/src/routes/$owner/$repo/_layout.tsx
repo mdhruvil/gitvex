@@ -14,6 +14,7 @@ import {
   GitPullRequestIcon,
   SettingsIcon,
 } from "lucide-react";
+import { getBranchesQueryOptions } from "@/api/branches";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,6 +27,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export const Route = createFileRoute("/$owner/$repo/_layout")({
   component: RouteComponent,
   loader: async ({ params, context: { queryClient } }) => {
+    queryClient.prefetchQuery(
+      getBranchesQueryOptions({
+        owner: params.owner,
+        repo: params.repo,
+      })
+    );
     await queryClient.ensureQueryData(
       convexQuery(api.repositories.getByOwnerAndName, {
         owner: params.owner,

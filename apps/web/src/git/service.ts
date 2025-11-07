@@ -62,7 +62,7 @@ export class GitService {
     }
 
     const [branches, tags] = await Promise.all([
-      this.listBranches(),
+      this.listBranchesWithOid(),
       this.listTags(),
     ]);
 
@@ -71,7 +71,7 @@ export class GitService {
     return { refs, symbolicHead };
   }
 
-  async listBranches(): Promise<Array<{ ref: string; oid: string }>> {
+  async listBranchesWithOid(): Promise<Array<{ ref: string; oid: string }>> {
     try {
       const branchRefs = await git.listBranches({
         fs: this.fs,
@@ -89,6 +89,19 @@ export class GitService {
       );
       return branches;
     } catch {
+      return [];
+    }
+  }
+
+  async listBranches() {
+    try {
+      const branchRefs = await git.listBranches({
+        fs: this.fs,
+        gitdir: this.gitdir,
+      });
+      return branchRefs;
+    } catch (error) {
+      logger.warn("(list-branches) Failed to list branches: ", error);
       return [];
     }
   }
