@@ -14,6 +14,8 @@ export class GitService {
   private readonly fs: ReturnType<IsoGitFs["getPromiseFsClient"]>;
   private readonly gitdir: string;
 
+  private readonly cache: object = {};
+
   constructor(fs: ReturnType<IsoGitFs["getPromiseFsClient"]>, gitdir: string) {
     this.fs = fs;
     this.gitdir = gitdir;
@@ -119,6 +121,7 @@ export class GitService {
         fs: this.fs,
         gitdir: this.gitdir,
         oid,
+        cache: this.cache,
       });
     } catch (error) {
       logger.warn(`(read-object) Failed to read object ${oid}: ${error}`);
@@ -133,6 +136,7 @@ export class GitService {
         gitdir: this.gitdir,
         oid,
         format: "content",
+        cache: this.cache,
       });
 
       // Ensure we return string or Uint8Array
@@ -176,6 +180,7 @@ export class GitService {
       dir: this.gitdir,
       gitdir: this.gitdir,
       filepath: filePath,
+      cache: this.cache,
     });
   }
 
@@ -207,6 +212,7 @@ export class GitService {
           fs: this.fs,
           gitdir: this.gitdir,
           oid,
+          cache: this.cache,
         });
 
         if (type === "commit") {
@@ -215,6 +221,7 @@ export class GitService {
             fs: this.fs,
             gitdir: this.gitdir,
             oid,
+            cache: this.cache,
           });
 
           // Add tree to queue
@@ -230,6 +237,7 @@ export class GitService {
             fs: this.fs,
             gitdir: this.gitdir,
             oid,
+            cache: this.cache,
           });
 
           // Add all tree entries to queue
@@ -242,6 +250,7 @@ export class GitService {
             fs: this.fs,
             gitdir: this.gitdir,
             oid,
+            cache: this.cache,
           });
 
           queue.push(tag.tag.object);
@@ -265,6 +274,7 @@ export class GitService {
       gitdir: this.gitdir,
       oids,
       write: false,
+      cache: this.cache,
     });
 
     return result.packfile;
@@ -276,6 +286,7 @@ export class GitService {
         fs: this.fs,
         gitdir: this.gitdir,
         oid,
+        cache: this.cache,
       });
       return true;
     } catch {
@@ -294,6 +305,53 @@ export class GitService {
     }
 
     return common;
+  }
+
+  async getLastCommit(
+    branch: string
+  ): Promise<git.ReadCommitResult | undefined> {
+    try {
+      const [commit] = await git.log({
+        fs: this.fs,
+        gitdir: this.gitdir,
+        ref: branch,
+        depth: 1,
+        cache: this.cache,
+      });
+
+      return commit ?? undefined;
+    } catch (error) {
+      logger.warn(
+        `(get-last-commit) Failed to get last commit for branch ${branch}: ${error}`
+      );
+      return undefined;
+    }
+  }
+
+  async getLog({
+    ref,
+    depth,
+    filepath,
+  }: {
+    ref?: string;
+    depth?: number;
+    filepath?: string;
+  }) {
+    try {
+      const commits = await git.log({
+        fs: this.fs,
+        gitdir: this.gitdir,
+        cache: this.cache,
+        ref,
+        depth,
+        filepath,
+      });
+
+      return commits;
+    } catch (error) {
+      logger.warn(`(get-log) Failed to get log for ref ${ref}: ${error}`);
+      return [];
+    }
   }
 
   // TODO: simplify this and some docs

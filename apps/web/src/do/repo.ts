@@ -10,14 +10,26 @@ import {
   parseReceivePackRequest,
 } from "@/git/protocol";
 import { GitService } from "@/git/service";
+import { cache } from "./cache";
 import { IsoGitFs } from "./fs";
 import { createLogger } from "./logger";
 
 export function getRepoDOStub(fullRepoName: string) {
-  return (env.REPO as DurableObjectNamespace<RepoBase>).getByName(fullRepoName);
+  const stub = (env.REPO as DurableObjectNamespace<RepoBase>).getByName(
+    fullRepoName
+  );
+  stub.setFullName(fullRepoName);
+  return stub;
 }
 
 const logger = createLogger("RepoDO");
+
+type Storage = {
+  fullName: string;
+  testKey: number;
+  anotherKey: boolean;
+  yetAnotherKey: string;
+};
 
 /**
  * Durable Object (DO) to manage a Git repository using isomorphic-git and DOFS.
@@ -28,6 +40,8 @@ class RepoBase extends DurableObject<Env> {
   private readonly dofs: Fs;
   private readonly isoGitFs: ReturnType<IsoGitFs["getPromiseFsClient"]>;
   private readonly git: GitService;
+
+  private _fullName: string | undefined;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -40,7 +54,36 @@ class RepoBase extends DurableObject<Env> {
     this.ctx.blockConcurrencyWhile(async () => {
       this.dofs.setDeviceSize(5 * 1024 * 1024 * 1024); // 5GB device size to support large repos
       await this.ensureRepoInitialized();
+      const storedFullName = await this.typedStorage.get("fullName");
+      if (storedFullName && !this._fullName) {
+        this._fullName = storedFullName;
+      }
     });
+  }
+
+  get fullName() {
+    if (!this._fullName) {
+      throw new Error("Repository full name is not set");
+    }
+    return this._fullName;
+  }
+
+  async setFullName(fullName: string) {
+    if (this._fullName) return;
+
+    this._fullName = fullName;
+    await this.typedStorage.put("fullName", fullName);
+  }
+
+  get typedStorage() {
+    return {
+      get: async <K extends keyof Storage>(key: K) =>
+        this.ctx.storage.get<Storage[K]>(key),
+      put: async <K extends keyof Storage>(key: K, value: Storage[K]) =>
+        this.ctx.storage.put(key, value),
+      delete: async <K extends keyof Storage>(key: K) =>
+        this.ctx.storage.delete(key),
+    };
   }
 
   async fetch(request: Request) {
@@ -171,6 +214,32 @@ class RepoBase extends DurableObject<Env> {
     }
 
     return new Response("Unsupported command", { status: 400 });
+  }
+
+  async getLatestCommit(branch = "HEAD") {
+    const commit = await this.git.getLastCommit(branch);
+    return commit;
+  }
+
+  async getCommits(args: { ref?: string; depth?: number; filepath?: string }) {
+    const { ref, depth, filepath } = args;
+
+    const latestCommit = await this.getLatestCommit(ref);
+    if (!latestCommit) {
+      return [];
+    }
+
+    const commits = await cache.getOrSetJson({
+      key: `${this.fullName}/commits`,
+      fetcher: async () => await this.git.getLog(args),
+      params: {
+        ref,
+        depth: depth?.toString(),
+        filepath,
+        latestCommitOid: latestCommit.oid,
+      },
+    });
+    return commits;
   }
 }
 
