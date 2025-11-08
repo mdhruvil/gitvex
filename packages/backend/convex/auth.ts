@@ -32,6 +32,9 @@ function createAuth(
       enabled: true,
       requireEmailVerification: false,
     },
+    advanced: {
+      useSecureCookies: true,
+    },
     plugins: [
       convex(),
       username(),
