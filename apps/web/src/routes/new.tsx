@@ -1,8 +1,13 @@
+import { env } from "cloudflare:workers";
+import { getCookieName } from "@convex-dev/better-auth/react-start";
 import { api } from "@gitvex/backend/convex/_generated/api";
+import { createAuth } from "@gitvex/backend/convex/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { getCookie } from "@tanstack/react-start/server";
+import { ConvexHttpClient } from "convex/browser";
 import { AlertCircleIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -29,7 +34,6 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { getRepoDOStub } from "@/do/repo";
-import { fetchMutation } from "@/lib/auth-server";
 import { handleAndThrowConvexError } from "@/lib/convex";
 
 export const Route = createFileRoute("/new")({
@@ -51,14 +55,34 @@ const formSchema = z.object({
   isPrivate: z.boolean(),
 });
 
+const createClient = () => {
+  const sessionCookieName = getCookieName(createAuth);
+  const token = getCookie(sessionCookieName);
+  console.log({
+    sessionCookieName,
+    tokenExists: !!token,
+  });
+  const client = new ConvexHttpClient(env.VITE_CONVEX_URL);
+  if (token) {
+    console.log("Setting auth token in Convex client");
+    client.setAuth(token);
+  } else {
+    console.log("No auth token found in cookies");
+  }
+  return client;
+};
+
 const createRepoServerFn = createServerFn({ method: "POST" })
   .inputValidator(formSchema)
   .handler(async ({ data }) => {
-    const resp = await fetchMutation(api.repositories.create, {
-      name: data.name,
-      description: data.description.trim() || undefined,
-      isPrivate: data.isPrivate,
-    }).catch(handleAndThrowConvexError);
+    const client = createClient();
+    const resp = await client
+      .mutation(api.repositories.create, {
+        name: data.name,
+        description: data.description.trim() || undefined,
+        isPrivate: data.isPrivate,
+      })
+      .catch(handleAndThrowConvexError);
 
     const stub = getRepoDOStub(resp.fullName);
     await stub.ensureRepoInitialized();
