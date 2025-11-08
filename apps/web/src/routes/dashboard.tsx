@@ -1,26 +1,42 @@
-import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@gitvex/backend/convex/_generated/api";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  Authenticated,
+  AuthLoading,
+  Unauthenticated,
+  useQuery,
+} from "convex/react";
+import { useState } from "react";
+import SignInForm from "@/components/sign-in-form";
+import SignUpForm from "@/components/sign-up-form";
 
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
-  loader: async ({ context: { queryClient } }) => {
-    await queryClient.ensureQueryData(convexQuery(api.auth.getCurrentUser, {}));
-    console.log("Dashboard loader executed");
-  },
 });
 
 function RouteComponent() {
-  const { data: privateData } = useSuspenseQuery(
-    convexQuery(api.auth.getCurrentUser, {})
-  );
+  const [showSignIn, setShowSignIn] = useState(false);
+  const privateData = useQuery(api.privateData.get);
 
   return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>privateData</p>
-      <pre>{JSON.stringify(privateData, null, 2)}</pre>
-    </div>
+    <>
+      <Authenticated>
+        <div>
+          <h1>Dashboard</h1>
+          <p>privateData: {privateData?.message}</p>
+          <pre>{JSON.stringify(privateData, null, 2)}</pre>
+        </div>
+      </Authenticated>
+      <Unauthenticated>
+        {showSignIn ? (
+          <SignInForm onSwitchToSignUp={() => setShowSignIn(false)} />
+        ) : (
+          <SignUpForm onSwitchToSignIn={() => setShowSignIn(true)} />
+        )}
+      </Unauthenticated>
+      <AuthLoading>
+        <div>Loading...</div>
+      </AuthLoading>
+    </>
   );
 }
