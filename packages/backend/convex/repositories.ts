@@ -126,7 +126,13 @@ export const update = mutation({
     isPrivate: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity().catch(() => null);
     const user = await authComponent.getAuthUser(ctx).catch(() => null);
+
+    console.log({
+      identity,
+      user,
+    });
 
     if (!user) {
       throw new ConvexError("Not authenticated");
@@ -137,8 +143,8 @@ export const update = mutation({
       throw new ConvexError("Repository not found");
     }
 
-    // Check if user is the owner
     if (repo.ownerId !== user._id) {
+      // Check if user is the owner
       throw new ConvexError("Not authorized to update this repository");
     }
 
@@ -148,8 +154,8 @@ export const update = mutation({
 
     const username = user.username;
 
-    // If updating name, validate and check for conflicts
     if (args.name !== undefined && args.name !== repo.name) {
+      // If updating name, validate and check for conflicts
       const newName = args.name;
 
       if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
