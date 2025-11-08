@@ -5,6 +5,7 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { formatDistanceToNow } from "date-fns";
+import { CircleCheckIcon, CircleDotIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -35,6 +36,22 @@ const addCommentServerFn = createServerFn({ method: "POST" })
     }).catch(handleAndThrowConvexError);
 
     return commentId;
+  });
+
+const updateIssueStatusSchema = z.object({
+  issueId: z.custom<Id<"issues">>(),
+  status: z.enum(["open", "closed"]),
+});
+
+const updateIssueStatusServerFn = createServerFn({ method: "POST" })
+  .inputValidator(updateIssueStatusSchema)
+  .handler(async ({ data }) => {
+    await fetchMutation(api.issues.update, {
+      id: data.issueId,
+      status: data.status,
+    }).catch(handleAndThrowConvexError);
+
+    return null;
   });
 
 export const Route = createFileRoute(
@@ -77,6 +94,22 @@ function RouteComponent() {
     },
   });
 
+  const updateIssueStatusMutation = useMutation({
+    mutationFn: async (status: "open" | "closed") =>
+      await updateIssueStatusServerFn({
+        data: {
+          issueId: issue._id,
+          status,
+        },
+      }),
+
+    onError: (err) => {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update issue status";
+      toast.error(errorMessage);
+    },
+  });
+
   const handleSubmitComment = () => {
     if (!commentBody.trim()) {
       return;
@@ -89,9 +122,23 @@ function RouteComponent() {
     setCommentBody("");
   };
 
+  const handleToggleStatus = () => {
+    const newStatus = issue.status === "open" ? "closed" : "open";
+    updateIssueStatusMutation.mutate(newStatus);
+  };
+
   const isSubmitting = addCommentMutation.isPending;
 
   const statusLabel = issue.status === "open" ? "Open" : "Closed";
+
+  const issueIconMap = {
+    open: CircleDotIcon,
+    closed: CircleCheckIcon,
+  };
+
+  const CurrentStatusIcon = issueIconMap[issue.status];
+  const InverseStatusIcon =
+    issue.status === "open" ? issueIconMap.closed : issueIconMap.open;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -101,9 +148,10 @@ function RouteComponent() {
         <Badge
           className={cn("text-primary", {
             "bg-green-700": issue.status === "open",
-            "bg-red-700": issue.status === "closed",
+            "bg-purple-600": issue.status === "closed",
           })}
         >
+          <CurrentStatusIcon className="size-4" />
           {statusLabel}
         </Badge>
       </div>
@@ -152,21 +200,38 @@ function RouteComponent() {
             rows={4}
             value={commentBody}
           />
-          <div className="flex justify-end gap-2">
-            <Button
-              disabled={isSubmitting || !commentBody.trim()}
-              onClick={handleCancel}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              loading={isSubmitting}
-              onClick={handleSubmitComment}
-              type="button"
-            >
-              Comment
-            </Button>
+          <div className="flex items-center justify-between gap-2">
+            {issue.canUpdate && (
+              <Button
+                loading={updateIssueStatusMutation.isPending}
+                onClick={handleToggleStatus}
+                variant="outline"
+              >
+                <InverseStatusIcon
+                  className={cn("size-4", {
+                    "text-purple-400": issue.status === "open",
+                    "text-green-500": issue.status === "closed",
+                  })}
+                />
+                {issue.status === "open" ? "Close issue" : "Reopen issue"}
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button
+                disabled={isSubmitting || !commentBody.trim()}
+                onClick={handleCancel}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                loading={isSubmitting}
+                onClick={handleSubmitComment}
+                type="button"
+              >
+                Comment
+              </Button>
+            </div>
           </div>
         </div>
       </div>

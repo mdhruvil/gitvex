@@ -72,6 +72,7 @@ export const getByRepoAndNumber = query({
     status: v.union(v.literal("open"), v.literal("closed")),
     creatorId: v.string(),
     creatorUsername: v.string(),
+    canUpdate: v.boolean(),
     comments: v.array(
       v.object({
         _id: v.id("comments"),
@@ -125,9 +126,15 @@ export const getByRepoAndNumber = query({
       .order("asc")
       .collect();
 
+    // Check if user can update this issue (creator or repo owner)
+    const canUpdate =
+      user !== null &&
+      (issue.creatorId === user._id || repo.ownerId === user._id);
+
     return {
       ...issue,
       comments,
+      canUpdate,
     };
   },
 });
@@ -208,6 +215,7 @@ export const update = mutation({
     body: v.optional(v.string()),
     status: v.optional(v.union(v.literal("open"), v.literal("closed"))),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const user = await authComponent.getAuthUser(ctx).catch(() => null);
 
@@ -220,8 +228,17 @@ export const update = mutation({
       throw new ConvexError("Issue not found");
     }
 
-    // Check if user is the creator of the issue
-    if (issue.creatorId !== user._id) {
+    // Get the repository to check permissions
+    const repo = await ctx.db.get(issue.repositoryId);
+    if (!repo) {
+      throw new ConvexError("Repository not found");
+    }
+
+    // Check if user is the creator of the issue or the repository owner
+    const isCreator = issue.creatorId === user._id;
+    const isRepoOwner = repo.ownerId === user._id;
+
+    if (!isCreator && !isRepoOwner) {
       throw new ConvexError("Not authorized to update this issue");
     }
 
@@ -243,6 +260,7 @@ export const update = mutation({
     }
 
     await ctx.db.patch(args.id, updates);
+    return null;
   },
 });
 
