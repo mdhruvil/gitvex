@@ -8,8 +8,8 @@ export default Sentry.withSentry(
     // Setting this option to true will send default PII data to Sentry.
     // For example, automatic IP address collection on events
     sendDefaultPii: true,
-    integrations: [Sentry.consoleLoggingIntegration()],
-    enableLogs: true,
+    // integrations: [Sentry.consoleLoggingIntegration()],
+    // enableLogs: true,
   }),
   {
     async fetch(req) {

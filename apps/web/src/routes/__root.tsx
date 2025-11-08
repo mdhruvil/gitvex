@@ -1,15 +1,22 @@
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import { getCookieName } from "@convex-dev/better-auth/react-start";
 import type { ConvexQueryClient } from "@convex-dev/react-query";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
+  type ErrorComponentProps,
   HeadContent,
   Outlet,
   Scripts,
   useRouteContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { createServerFn } from "@tanstack/react-start";
+import { getCookie } from "@tanstack/react-start/server";
 import type { ConvexReactClient } from "convex/react";
+import { ConvexError } from "convex/values";
+import { AlertCircleIcon } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Toaster } from "@/components/ui/sonner";
 import { authClient } from "@/lib/auth-client";
 import appCss from "../index.css?url";
@@ -19,6 +26,13 @@ export type RouterAppContext = {
   convexClient: ConvexReactClient;
   convexQueryClient: ConvexQueryClient;
 };
+
+const fetchAuth = createServerFn({ method: "GET" }).handler(async () => {
+  const { createAuth } = await import("@gitvex/backend/convex/auth");
+  const sessionCookieName = getCookieName(createAuth);
+  const token = getCookie(sessionCookieName);
+  return { token };
+});
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
@@ -46,9 +60,36 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
     ],
   }),
-
+  beforeLoad: async ({ context }) => {
+    const { token } = await fetchAuth();
+    if (token) {
+      context.convexQueryClient.serverHttpClient?.setAuth(token);
+    }
+    return { token };
+  },
   component: RootDocument,
+  errorComponent: ErrorComponent,
 });
+
+function ErrorComponent({ error }: ErrorComponentProps) {
+  let errorMessage = error.message;
+  if (
+    error instanceof ConvexError &&
+    error.data &&
+    typeof error.data === "string"
+  ) {
+    errorMessage = error.data;
+  }
+  return (
+    <div className="p-4">
+      <Alert className="mb-6" variant="destructive">
+        <AlertCircleIcon className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{errorMessage}</AlertDescription>
+      </Alert>
+    </div>
+  );
+}
 
 function RootDocument() {
   const context = useRouteContext({ from: Route.id });

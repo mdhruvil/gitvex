@@ -55,7 +55,8 @@
         "useBlockStatements": "off"
       },
       "nursery": {
-        "noShadow": "off"
+        "noShadow": "off",
+        "noUselessUndefined": "off"
       },
       "complexity": {
         "useSimplifiedLogicExpression": "off",

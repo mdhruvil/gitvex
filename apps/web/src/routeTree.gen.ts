@@ -8,16 +8,26 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import { createFileRoute } from '@tanstack/react-router'
+
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodosRouteImport } from './routes/todos'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OwnerRepoIndexRouteImport } from './routes/$owner/$repo/index'
+import { Route as OwnerIndexRouteImport } from './routes/$owner/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as OwnerRepoGitUploadPackRouteImport } from './routes/$owner/$repo/git-upload-pack'
 import { Route as OwnerRepoGitReceivePackRouteImport } from './routes/$owner/$repo/git-receive-pack'
+import { Route as OwnerRepoLayoutRouteImport } from './routes/$owner/$repo/_layout'
+import { Route as OwnerRepoLayoutIndexRouteImport } from './routes/$owner/$repo/_layout/index'
 import { Route as OwnerRepoInfoRefsRouteImport } from './routes/$owner/$repo/info/refs'
+import { Route as OwnerRepoLayoutSettingsRouteImport } from './routes/$owner/$repo/_layout/settings'
+import { Route as OwnerRepoLayoutPullsRouteImport } from './routes/$owner/$repo/_layout/pulls'
+import { Route as OwnerRepoLayoutIssuesRouteImport } from './routes/$owner/$repo/_layout/issues'
+import { Route as OwnerRepoLayoutCommitsRouteImport } from './routes/$owner/$repo/_layout/commits'
+
+const OwnerRepoRouteImport = createFileRoute('/$owner/$repo')()
 
 const TodosRoute = TodosRouteImport.update({
   id: '/todos',
@@ -39,9 +49,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OwnerRepoIndexRoute = OwnerRepoIndexRouteImport.update({
-  id: '/$owner/$repo/',
-  path: '/$owner/$repo/',
+const OwnerRepoRoute = OwnerRepoRouteImport.update({
+  id: '/$owner/$repo',
+  path: '/$owner/$repo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerIndexRoute = OwnerIndexRouteImport.update({
+  id: '/$owner/',
+  path: '/$owner/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -50,19 +65,48 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const OwnerRepoGitUploadPackRoute = OwnerRepoGitUploadPackRouteImport.update({
-  id: '/$owner/$repo/git-upload-pack',
-  path: '/$owner/$repo/git-upload-pack',
-  getParentRoute: () => rootRouteImport,
+  id: '/git-upload-pack',
+  path: '/git-upload-pack',
+  getParentRoute: () => OwnerRepoRoute,
 } as any)
 const OwnerRepoGitReceivePackRoute = OwnerRepoGitReceivePackRouteImport.update({
-  id: '/$owner/$repo/git-receive-pack',
-  path: '/$owner/$repo/git-receive-pack',
-  getParentRoute: () => rootRouteImport,
+  id: '/git-receive-pack',
+  path: '/git-receive-pack',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoLayoutRoute = OwnerRepoLayoutRouteImport.update({
+  id: '/_layout',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoLayoutIndexRoute = OwnerRepoLayoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OwnerRepoLayoutRoute,
 } as any)
 const OwnerRepoInfoRefsRoute = OwnerRepoInfoRefsRouteImport.update({
-  id: '/$owner/$repo/info/refs',
-  path: '/$owner/$repo/info/refs',
-  getParentRoute: () => rootRouteImport,
+  id: '/info/refs',
+  path: '/info/refs',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoLayoutSettingsRoute = OwnerRepoLayoutSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => OwnerRepoLayoutRoute,
+} as any)
+const OwnerRepoLayoutPullsRoute = OwnerRepoLayoutPullsRouteImport.update({
+  id: '/pulls',
+  path: '/pulls',
+  getParentRoute: () => OwnerRepoLayoutRoute,
+} as any)
+const OwnerRepoLayoutIssuesRoute = OwnerRepoLayoutIssuesRouteImport.update({
+  id: '/issues',
+  path: '/issues',
+  getParentRoute: () => OwnerRepoLayoutRoute,
+} as any)
+const OwnerRepoLayoutCommitsRoute = OwnerRepoLayoutCommitsRouteImport.update({
+  id: '/commits',
+  path: '/commits',
+  getParentRoute: () => OwnerRepoLayoutRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -70,21 +114,32 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
   '/todos': typeof TodosRoute
+  '/$owner': typeof OwnerIndexRoute
+  '/$owner/$repo': typeof OwnerRepoLayoutRouteWithChildren
   '/$owner/$repo/git-receive-pack': typeof OwnerRepoGitReceivePackRoute
   '/$owner/$repo/git-upload-pack': typeof OwnerRepoGitUploadPackRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/$owner/$repo': typeof OwnerRepoIndexRoute
+  '/$owner/$repo/commits': typeof OwnerRepoLayoutCommitsRoute
+  '/$owner/$repo/issues': typeof OwnerRepoLayoutIssuesRoute
+  '/$owner/$repo/pulls': typeof OwnerRepoLayoutPullsRoute
+  '/$owner/$repo/settings': typeof OwnerRepoLayoutSettingsRoute
   '/$owner/$repo/info/refs': typeof OwnerRepoInfoRefsRoute
+  '/$owner/$repo/': typeof OwnerRepoLayoutIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
   '/todos': typeof TodosRoute
+  '/$owner': typeof OwnerIndexRoute
+  '/$owner/$repo': typeof OwnerRepoLayoutIndexRoute
   '/$owner/$repo/git-receive-pack': typeof OwnerRepoGitReceivePackRoute
   '/$owner/$repo/git-upload-pack': typeof OwnerRepoGitUploadPackRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/$owner/$repo': typeof OwnerRepoIndexRoute
+  '/$owner/$repo/commits': typeof OwnerRepoLayoutCommitsRoute
+  '/$owner/$repo/issues': typeof OwnerRepoLayoutIssuesRoute
+  '/$owner/$repo/pulls': typeof OwnerRepoLayoutPullsRoute
+  '/$owner/$repo/settings': typeof OwnerRepoLayoutSettingsRoute
   '/$owner/$repo/info/refs': typeof OwnerRepoInfoRefsRoute
 }
 export interface FileRoutesById {
@@ -93,11 +148,18 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
   '/todos': typeof TodosRoute
+  '/$owner/': typeof OwnerIndexRoute
+  '/$owner/$repo': typeof OwnerRepoRouteWithChildren
+  '/$owner/$repo/_layout': typeof OwnerRepoLayoutRouteWithChildren
   '/$owner/$repo/git-receive-pack': typeof OwnerRepoGitReceivePackRoute
   '/$owner/$repo/git-upload-pack': typeof OwnerRepoGitUploadPackRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/$owner/$repo/': typeof OwnerRepoIndexRoute
+  '/$owner/$repo/_layout/commits': typeof OwnerRepoLayoutCommitsRoute
+  '/$owner/$repo/_layout/issues': typeof OwnerRepoLayoutIssuesRoute
+  '/$owner/$repo/_layout/pulls': typeof OwnerRepoLayoutPullsRoute
+  '/$owner/$repo/_layout/settings': typeof OwnerRepoLayoutSettingsRoute
   '/$owner/$repo/info/refs': typeof OwnerRepoInfoRefsRoute
+  '/$owner/$repo/_layout/': typeof OwnerRepoLayoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -106,21 +168,32 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/new'
     | '/todos'
+    | '/$owner'
+    | '/$owner/$repo'
     | '/$owner/$repo/git-receive-pack'
     | '/$owner/$repo/git-upload-pack'
     | '/api/auth/$'
-    | '/$owner/$repo'
+    | '/$owner/$repo/commits'
+    | '/$owner/$repo/issues'
+    | '/$owner/$repo/pulls'
+    | '/$owner/$repo/settings'
     | '/$owner/$repo/info/refs'
+    | '/$owner/$repo/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
     | '/new'
     | '/todos'
+    | '/$owner'
+    | '/$owner/$repo'
     | '/$owner/$repo/git-receive-pack'
     | '/$owner/$repo/git-upload-pack'
     | '/api/auth/$'
-    | '/$owner/$repo'
+    | '/$owner/$repo/commits'
+    | '/$owner/$repo/issues'
+    | '/$owner/$repo/pulls'
+    | '/$owner/$repo/settings'
     | '/$owner/$repo/info/refs'
   id:
     | '__root__'
@@ -128,11 +201,18 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/new'
     | '/todos'
+    | '/$owner/'
+    | '/$owner/$repo'
+    | '/$owner/$repo/_layout'
     | '/$owner/$repo/git-receive-pack'
     | '/$owner/$repo/git-upload-pack'
     | '/api/auth/$'
-    | '/$owner/$repo/'
+    | '/$owner/$repo/_layout/commits'
+    | '/$owner/$repo/_layout/issues'
+    | '/$owner/$repo/_layout/pulls'
+    | '/$owner/$repo/_layout/settings'
     | '/$owner/$repo/info/refs'
+    | '/$owner/$repo/_layout/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -140,11 +220,9 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   NewRoute: typeof NewRoute
   TodosRoute: typeof TodosRoute
-  OwnerRepoGitReceivePackRoute: typeof OwnerRepoGitReceivePackRoute
-  OwnerRepoGitUploadPackRoute: typeof OwnerRepoGitUploadPackRoute
+  OwnerIndexRoute: typeof OwnerIndexRoute
+  OwnerRepoRoute: typeof OwnerRepoRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  OwnerRepoIndexRoute: typeof OwnerRepoIndexRoute
-  OwnerRepoInfoRefsRoute: typeof OwnerRepoInfoRefsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -177,11 +255,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$owner/$repo/': {
-      id: '/$owner/$repo/'
+    '/$owner/$repo': {
+      id: '/$owner/$repo'
       path: '/$owner/$repo'
       fullPath: '/$owner/$repo'
-      preLoaderRoute: typeof OwnerRepoIndexRouteImport
+      preLoaderRoute: typeof OwnerRepoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/': {
+      id: '/$owner/'
+      path: '/$owner'
+      fullPath: '/$owner'
+      preLoaderRoute: typeof OwnerIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -193,38 +278,116 @@ declare module '@tanstack/react-router' {
     }
     '/$owner/$repo/git-upload-pack': {
       id: '/$owner/$repo/git-upload-pack'
-      path: '/$owner/$repo/git-upload-pack'
+      path: '/git-upload-pack'
       fullPath: '/$owner/$repo/git-upload-pack'
       preLoaderRoute: typeof OwnerRepoGitUploadPackRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OwnerRepoRoute
     }
     '/$owner/$repo/git-receive-pack': {
       id: '/$owner/$repo/git-receive-pack'
-      path: '/$owner/$repo/git-receive-pack'
+      path: '/git-receive-pack'
       fullPath: '/$owner/$repo/git-receive-pack'
       preLoaderRoute: typeof OwnerRepoGitReceivePackRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/_layout': {
+      id: '/$owner/$repo/_layout'
+      path: '/$owner/$repo'
+      fullPath: '/$owner/$repo'
+      preLoaderRoute: typeof OwnerRepoLayoutRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/_layout/': {
+      id: '/$owner/$repo/_layout/'
+      path: '/'
+      fullPath: '/$owner/$repo/'
+      preLoaderRoute: typeof OwnerRepoLayoutIndexRouteImport
+      parentRoute: typeof OwnerRepoLayoutRoute
     }
     '/$owner/$repo/info/refs': {
       id: '/$owner/$repo/info/refs'
-      path: '/$owner/$repo/info/refs'
+      path: '/info/refs'
       fullPath: '/$owner/$repo/info/refs'
       preLoaderRoute: typeof OwnerRepoInfoRefsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/_layout/settings': {
+      id: '/$owner/$repo/_layout/settings'
+      path: '/settings'
+      fullPath: '/$owner/$repo/settings'
+      preLoaderRoute: typeof OwnerRepoLayoutSettingsRouteImport
+      parentRoute: typeof OwnerRepoLayoutRoute
+    }
+    '/$owner/$repo/_layout/pulls': {
+      id: '/$owner/$repo/_layout/pulls'
+      path: '/pulls'
+      fullPath: '/$owner/$repo/pulls'
+      preLoaderRoute: typeof OwnerRepoLayoutPullsRouteImport
+      parentRoute: typeof OwnerRepoLayoutRoute
+    }
+    '/$owner/$repo/_layout/issues': {
+      id: '/$owner/$repo/_layout/issues'
+      path: '/issues'
+      fullPath: '/$owner/$repo/issues'
+      preLoaderRoute: typeof OwnerRepoLayoutIssuesRouteImport
+      parentRoute: typeof OwnerRepoLayoutRoute
+    }
+    '/$owner/$repo/_layout/commits': {
+      id: '/$owner/$repo/_layout/commits'
+      path: '/commits'
+      fullPath: '/$owner/$repo/commits'
+      preLoaderRoute: typeof OwnerRepoLayoutCommitsRouteImport
+      parentRoute: typeof OwnerRepoLayoutRoute
     }
   }
 }
+
+interface OwnerRepoLayoutRouteChildren {
+  OwnerRepoLayoutCommitsRoute: typeof OwnerRepoLayoutCommitsRoute
+  OwnerRepoLayoutIssuesRoute: typeof OwnerRepoLayoutIssuesRoute
+  OwnerRepoLayoutPullsRoute: typeof OwnerRepoLayoutPullsRoute
+  OwnerRepoLayoutSettingsRoute: typeof OwnerRepoLayoutSettingsRoute
+  OwnerRepoLayoutIndexRoute: typeof OwnerRepoLayoutIndexRoute
+}
+
+const OwnerRepoLayoutRouteChildren: OwnerRepoLayoutRouteChildren = {
+  OwnerRepoLayoutCommitsRoute: OwnerRepoLayoutCommitsRoute,
+  OwnerRepoLayoutIssuesRoute: OwnerRepoLayoutIssuesRoute,
+  OwnerRepoLayoutPullsRoute: OwnerRepoLayoutPullsRoute,
+  OwnerRepoLayoutSettingsRoute: OwnerRepoLayoutSettingsRoute,
+  OwnerRepoLayoutIndexRoute: OwnerRepoLayoutIndexRoute,
+}
+
+const OwnerRepoLayoutRouteWithChildren = OwnerRepoLayoutRoute._addFileChildren(
+  OwnerRepoLayoutRouteChildren,
+)
+
+interface OwnerRepoRouteChildren {
+  OwnerRepoLayoutRoute: typeof OwnerRepoLayoutRouteWithChildren
+  OwnerRepoGitReceivePackRoute: typeof OwnerRepoGitReceivePackRoute
+  OwnerRepoGitUploadPackRoute: typeof OwnerRepoGitUploadPackRoute
+  OwnerRepoInfoRefsRoute: typeof OwnerRepoInfoRefsRoute
+}
+
+const OwnerRepoRouteChildren: OwnerRepoRouteChildren = {
+  OwnerRepoLayoutRoute: OwnerRepoLayoutRouteWithChildren,
+  OwnerRepoGitReceivePackRoute: OwnerRepoGitReceivePackRoute,
+  OwnerRepoGitUploadPackRoute: OwnerRepoGitUploadPackRoute,
+  OwnerRepoInfoRefsRoute: OwnerRepoInfoRefsRoute,
+}
+
+const OwnerRepoRouteWithChildren = OwnerRepoRoute._addFileChildren(
+  OwnerRepoRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   NewRoute: NewRoute,
   TodosRoute: TodosRoute,
-  OwnerRepoGitReceivePackRoute: OwnerRepoGitReceivePackRoute,
-  OwnerRepoGitUploadPackRoute: OwnerRepoGitUploadPackRoute,
+  OwnerIndexRoute: OwnerIndexRoute,
+  OwnerRepoRoute: OwnerRepoRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  OwnerRepoIndexRoute: OwnerRepoIndexRoute,
-  OwnerRepoInfoRefsRoute: OwnerRepoInfoRefsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
