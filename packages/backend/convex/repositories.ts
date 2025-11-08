@@ -65,7 +65,13 @@ export const create = mutation({
     isPrivate: v.boolean(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity().catch(() => null);
     const user = await authComponent.getAuthUser(ctx).catch(() => null);
+
+    console.log({
+      identity,
+      user,
+    });
 
     if (!user) {
       throw new ConvexError("Not authenticated");
@@ -77,8 +83,8 @@ export const create = mutation({
 
     const username = user.username;
 
-    // Validate repository name (basic validation)
     if (!/^[a-zA-Z0-9_-]+$/.test(args.name)) {
+      // Validate repository name (basic validation)
       throw new ConvexError(
         "Repository name can only contain letters, numbers, hyphens, and underscores"
       );
