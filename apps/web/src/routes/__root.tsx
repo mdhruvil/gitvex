@@ -3,6 +3,7 @@ import { getCookieName } from "@convex-dev/better-auth/react-start";
 import type { ConvexQueryClient } from "@convex-dev/react-query";
 import interWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import interUrl from "@fontsource-variable/inter/index.css?url";
+import { createAuth } from "@gitvex/backend/convex/auth";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -18,6 +19,7 @@ import { getCookie } from "@tanstack/react-start/server";
 import type { ConvexReactClient } from "convex/react";
 import { ConvexError } from "convex/values";
 import { AlertCircleIcon } from "lucide-react";
+import { getSessionOptions } from "@/api/session";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Toaster } from "@/components/ui/sonner";
 import { authClient } from "@/lib/auth-client";
@@ -30,7 +32,6 @@ export type RouterAppContext = {
 };
 
 const fetchAuth = createServerFn({ method: "GET" }).handler(async () => {
-  const { createAuth } = await import("@gitvex/backend/convex/auth");
   const sessionCookieName = getCookieName(createAuth);
   const token = getCookie(sessionCookieName);
   return { token };
@@ -79,6 +80,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       context.convexQueryClient.serverHttpClient?.setAuth(token);
     }
     return { token };
+  },
+  loader: async ({ context: { queryClient } }) => {
+    queryClient.prefetchQuery(getSessionOptions);
   },
   component: RootDocument,
   errorComponent: ErrorComponent,

@@ -23,6 +23,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserProfileButton } from "@/components/user-profile-button";
 
 export const Route = createFileRoute("/$owner/$repo/_layout")({
   component: RouteComponent,
@@ -88,42 +89,45 @@ function RouteComponent() {
     <div className="my-5">
       <div className="border-b">
         <nav className="mx-auto max-w-5xl space-y-3">
-          <div className="flex items-center gap-4">
-            <Link className="ml-3" to="/">
-              <GitBranchIcon className="size-5" />
-            </Link>
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link
-                      className="text-primary"
-                      params={{
-                        owner,
-                      }}
-                      to="/$owner"
-                    >
-                      {owner}
-                    </Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator>/</BreadcrumbSeparator>
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link
-                      className="font-semibold text-primary"
-                      params={{
-                        owner,
-                        repo,
-                      }}
-                      to="/$owner/$repo"
-                    >
-                      {repo}
-                    </Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link className="ml-3" to="/">
+                <GitBranchIcon className="size-5" />
+              </Link>
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link
+                        className="text-primary"
+                        params={{
+                          owner,
+                        }}
+                        to="/$owner"
+                      >
+                        {owner}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link
+                        className="font-semibold text-primary"
+                        params={{
+                          owner,
+                          repo,
+                        }}
+                        to="/$owner/$repo"
+                      >
+                        {repo}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+            <UserProfileButton />
           </div>
           <div>
             <Tabs
