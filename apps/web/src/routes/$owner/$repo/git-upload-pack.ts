@@ -6,7 +6,9 @@ export const Route = createFileRoute("/$owner/$repo/git-upload-pack")({
     handlers: {
       POST: async ({ request, params }) => {
         const { owner, repo } = params;
-        const stub = getRepoDOStub(`${owner}/${repo}`);
+        // Strip .git suffix if present
+        const repoName = repo.endsWith(".git") ? repo.slice(0, -4) : repo;
+        const stub = getRepoDOStub(`${owner}/${repoName}`);
         const contentType =
           request.headers.get("Content-Type") ??
           "application/x-git-upload-pack-request";

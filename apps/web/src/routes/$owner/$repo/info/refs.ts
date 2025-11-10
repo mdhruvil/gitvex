@@ -10,7 +10,9 @@ export const Route = createFileRoute("/$owner/$repo/info/refs")({
 
         if (service === "git-upload-pack" || service === "git-receive-pack") {
           const { repo, owner } = params;
-          const fullRepoName = `${owner}/${repo}`;
+          // Strip .git suffix if present
+          const repoName = repo.endsWith(".git") ? repo.slice(0, -4) : repo;
+          const fullRepoName = `${owner}/${repoName}`;
 
           return advertiseCapabilities(service, fullRepoName);
         }
