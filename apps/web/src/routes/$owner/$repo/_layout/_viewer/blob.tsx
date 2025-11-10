@@ -82,15 +82,27 @@ function RouteComponent() {
     );
   }
 
-  const content = decodeURIComponent(
-    atob(blob.content)
-      .split("")
-      .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, "0")}`)
-      .join("")
-  );
-
   const pathParts = filepath.split("/");
   const filename = pathParts.pop() || filepath;
+
+  // Decode content only for text files
+  let content = "";
+  if (!blob.isBinary) {
+    try {
+      // Convert base64 to Uint8Array
+      const binaryString = atob(blob.content);
+      const bytes = new Uint8Array(
+        Array.from(binaryString).map((char) => char.charCodeAt(0))
+      );
+      // Decode UTF-8 bytes to string
+      const decoder = new TextDecoder("utf-8");
+      content = decoder.decode(bytes);
+    } catch (error) {
+      // If UTF-8 decoding fails, fall back to treating as binary
+      console.error("Failed to decode file content as UTF-8:", error);
+      blob.isBinary = true;
+    }
+  }
 
   const language = getLanguageFromFilename(filename);
 
@@ -136,7 +148,7 @@ function RouteComponent() {
           <div className="text-sm">
             {filename}{" "}
             <span className="text-muted-foreground text-xs">
-              ({formatBytes(blob.size)})
+              ({formatBytes(blob.size, { decimals: 2 })})
             </span>
           </div>
 
@@ -185,7 +197,7 @@ function RouteComponent() {
                 This file cannot be displayed because it is a binary file.
               </p>
               <p className="mt-2 text-muted-foreground text-xs">
-                Size: {(blob.size / 1024).toFixed(2)} KB
+                Size: {formatBytes(blob.size, { decimals: 2 })}
               </p>
             </div>
           )}

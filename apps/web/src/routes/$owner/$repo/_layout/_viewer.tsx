@@ -81,9 +81,7 @@ function RouteComponent() {
                         params={params}
                         search={{
                           ref,
-                          path: pathParts
-                            .slice(0, pathParts.indexOf(part) + 1)
-                            .join("/"),
+                          path: pathParts.slice(0, i + 1).join("/"),
                         }}
                         to="/$owner/$repo/tree"
                       >
