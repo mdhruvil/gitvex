@@ -36,7 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getRepoDOStub } from "@/do/repo";
 import { handleAndThrowConvexError } from "@/lib/convex";
 
-export const Route = createFileRoute("/new")({
+export const Route = createFileRoute("/_layout/new")({
   component: RouteComponent,
 });
 

@@ -12,10 +12,12 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodosRouteImport } from './routes/todos'
-import { Route as NewRouteImport } from './routes/new'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OwnerIndexRouteImport } from './routes/$owner/index'
+import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutNewRouteImport } from './routes/_layout/new'
+import { Route as LayoutOwnerRouteImport } from './routes/_layout/$owner'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as OwnerRepoGitUploadPackRouteImport } from './routes/$owner/$repo/git-upload-pack'
 import { Route as OwnerRepoGitReceivePackRouteImport } from './routes/$owner/$repo/git-receive-pack'
@@ -40,14 +42,13 @@ const TodosRoute = TodosRouteImport.update({
   path: '/todos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NewRoute = NewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LayoutRoute = LayoutRouteImport.update({
+  id: '/_layout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -60,10 +61,20 @@ const OwnerRepoRoute = OwnerRepoRouteImport.update({
   path: '/$owner/$repo',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OwnerIndexRoute = OwnerIndexRouteImport.update({
-  id: '/$owner/',
-  path: '/$owner/',
-  getParentRoute: () => rootRouteImport,
+const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutNewRoute = LayoutNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutOwnerRoute = LayoutOwnerRouteImport.update({
+  id: '/$owner',
+  path: '/$owner',
+  getParentRoute: () => LayoutRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -153,9 +164,10 @@ const OwnerRepoLayoutViewerBlobRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/new': typeof NewRoute
   '/todos': typeof TodosRoute
-  '/$owner': typeof OwnerIndexRoute
+  '/$owner': typeof LayoutOwnerRoute
+  '/new': typeof LayoutNewRoute
+  '/settings': typeof LayoutSettingsRoute
   '/$owner/$repo': typeof OwnerRepoLayoutViewerRouteWithChildren
   '/$owner/$repo/git-receive-pack': typeof OwnerRepoGitReceivePackRoute
   '/$owner/$repo/git-upload-pack': typeof OwnerRepoGitUploadPackRoute
@@ -175,9 +187,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/new': typeof NewRoute
   '/todos': typeof TodosRoute
-  '/$owner': typeof OwnerIndexRoute
+  '/$owner': typeof LayoutOwnerRoute
+  '/new': typeof LayoutNewRoute
+  '/settings': typeof LayoutSettingsRoute
   '/$owner/$repo': typeof OwnerRepoLayoutIndexRoute
   '/$owner/$repo/git-receive-pack': typeof OwnerRepoGitReceivePackRoute
   '/$owner/$repo/git-upload-pack': typeof OwnerRepoGitUploadPackRoute
@@ -196,10 +209,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_layout': typeof LayoutRouteWithChildren
   '/dashboard': typeof DashboardRoute
-  '/new': typeof NewRoute
   '/todos': typeof TodosRoute
-  '/$owner/': typeof OwnerIndexRoute
+  '/_layout/$owner': typeof LayoutOwnerRoute
+  '/_layout/new': typeof LayoutNewRoute
+  '/_layout/settings': typeof LayoutSettingsRoute
   '/$owner/$repo': typeof OwnerRepoRouteWithChildren
   '/$owner/$repo/_layout': typeof OwnerRepoLayoutRouteWithChildren
   '/$owner/$repo/git-receive-pack': typeof OwnerRepoGitReceivePackRoute
@@ -223,9 +238,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
-    | '/new'
     | '/todos'
     | '/$owner'
+    | '/new'
+    | '/settings'
     | '/$owner/$repo'
     | '/$owner/$repo/git-receive-pack'
     | '/$owner/$repo/git-upload-pack'
@@ -245,9 +261,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard'
-    | '/new'
     | '/todos'
     | '/$owner'
+    | '/new'
+    | '/settings'
     | '/$owner/$repo'
     | '/$owner/$repo/git-receive-pack'
     | '/$owner/$repo/git-upload-pack'
@@ -265,10 +282,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_layout'
     | '/dashboard'
-    | '/new'
     | '/todos'
-    | '/$owner/'
+    | '/_layout/$owner'
+    | '/_layout/new'
+    | '/_layout/settings'
     | '/$owner/$repo'
     | '/$owner/$repo/_layout'
     | '/$owner/$repo/git-receive-pack'
@@ -290,10 +309,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LayoutRoute: typeof LayoutRouteWithChildren
   DashboardRoute: typeof DashboardRoute
-  NewRoute: typeof NewRoute
   TodosRoute: typeof TodosRoute
-  OwnerIndexRoute: typeof OwnerIndexRoute
   OwnerRepoRoute: typeof OwnerRepoRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -307,18 +325,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TodosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/new': {
-      id: '/new'
-      path: '/new'
-      fullPath: '/new'
-      preLoaderRoute: typeof NewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_layout': {
+      id: '/_layout'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof LayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -335,12 +353,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerRepoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$owner/': {
-      id: '/$owner/'
+    '/_layout/settings': {
+      id: '/_layout/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof LayoutSettingsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/new': {
+      id: '/_layout/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof LayoutNewRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/$owner': {
+      id: '/_layout/$owner'
       path: '/$owner'
       fullPath: '/$owner'
-      preLoaderRoute: typeof OwnerIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof LayoutOwnerRouteImport
+      parentRoute: typeof LayoutRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -457,6 +489,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface LayoutRouteChildren {
+  LayoutOwnerRoute: typeof LayoutOwnerRoute
+  LayoutNewRoute: typeof LayoutNewRoute
+  LayoutSettingsRoute: typeof LayoutSettingsRoute
+}
+
+const LayoutRouteChildren: LayoutRouteChildren = {
+  LayoutOwnerRoute: LayoutOwnerRoute,
+  LayoutNewRoute: LayoutNewRoute,
+  LayoutSettingsRoute: LayoutSettingsRoute,
+}
+
+const LayoutRouteWithChildren =
+  LayoutRoute._addFileChildren(LayoutRouteChildren)
+
 interface OwnerRepoLayoutViewerRouteChildren {
   OwnerRepoLayoutViewerBlobRoute: typeof OwnerRepoLayoutViewerBlobRoute
   OwnerRepoLayoutViewerRawRoute: typeof OwnerRepoLayoutViewerRawRoute
@@ -520,10 +567,9 @@ const OwnerRepoRouteWithChildren = OwnerRepoRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LayoutRoute: LayoutRouteWithChildren,
   DashboardRoute: DashboardRoute,
-  NewRoute: NewRoute,
   TodosRoute: TodosRoute,
-  OwnerIndexRoute: OwnerIndexRoute,
   OwnerRepoRoute: OwnerRepoRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
