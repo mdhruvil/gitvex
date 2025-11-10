@@ -252,5 +252,5 @@ function RouteComponent() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
