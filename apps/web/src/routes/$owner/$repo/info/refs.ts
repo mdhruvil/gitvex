@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { advertiseCapabilities } from "@/git/protocol";
+import { verifyAuth } from "@/lib/git-auth";
 
 export const Route = createFileRoute("/$owner/$repo/info/refs")({
   server: {
@@ -8,16 +9,33 @@ export const Route = createFileRoute("/$owner/$repo/info/refs")({
         const url = new URL(request.url);
         const service = url.searchParams.get("service");
 
-        if (service === "git-upload-pack" || service === "git-receive-pack") {
-          const { repo, owner } = params;
-          // Strip .git suffix if present
-          const repoName = repo.endsWith(".git") ? repo.slice(0, -4) : repo;
-          const fullRepoName = `${owner}/${repoName}`;
-
-          return advertiseCapabilities(service, fullRepoName);
+        if (service !== "git-upload-pack" && service !== "git-receive-pack") {
+          return new Response("Missing or invalid service", { status: 400 });
         }
 
-        return new Response("Missing or invalid service", { status: 400 });
+        const { repo, owner } = params;
+        const repoName = repo.endsWith(".git") ? repo.slice(0, -4) : repo;
+
+        // Verify authentication (allows anonymous for public repos on read)
+        const isAuthorized = await verifyAuth({
+          owner,
+          repo: repoName,
+          req: request,
+          service:
+            service === "git-upload-pack" ? "upload-pack" : "receive-pack",
+        });
+
+        if (!isAuthorized) {
+          return new Response("Unauthorized", {
+            status: 401,
+            headers: {
+              "WWW-Authenticate": 'Basic realm="Git"',
+            },
+          });
+        }
+
+        const fullRepoName = `${owner}/${repoName}`;
+        return advertiseCapabilities(service, fullRepoName);
       },
     },
   },
