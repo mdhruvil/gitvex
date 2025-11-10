@@ -255,19 +255,28 @@ class RepoBase extends DurableObject<Env> {
       return [];
     }
 
-    const tree = await this.git.getTree(resolvedRef, path);
+    const treeWithLastCommit = await cache.getOrSetJson({
+      key: `${this.fullName}/treeWithLastCommit`,
+      fetcher: async () => {
+        const tree = await this.git.getTree(resolvedRef, path);
 
-    const treeWithLastCommit = await Promise.all(
-      tree.map(async (item) => {
-        const lastCommit = await this.git.getLog({
-          ref,
-          depth: 1,
-          filepath: path ? `${path}/${item.path}` : item.path,
-        });
-        return { ...item, lastCommit: lastCommit[0] || null };
-      })
-    );
-    logger.debug(`get-tree, ref:${resolvedRef}, path:${path}`);
+        const data = await Promise.all(
+          tree.map(async (item) => {
+            const lastCommit = await this.git.getLog({
+              ref,
+              depth: 1,
+              filepath: path ? `${path}/${item.path}` : item.path,
+            });
+            return { ...item, lastCommit: lastCommit[0] || null };
+          })
+        );
+        return data;
+      },
+      params: {
+        resolvedRef,
+        path: path || "/",
+      },
+    });
 
     return treeWithLastCommit;
   }
@@ -280,10 +289,14 @@ class RepoBase extends DurableObject<Env> {
       return null;
     }
 
-    logger.debug(
-      `get-blob, ref:${ref}, resolvedRef:${resolvedRef}, filepath:${filepath}`
-    );
-    const blob = await this.git.getBlob(resolvedRef, filepath);
+    const blob = await cache.getOrSetJson({
+      key: `${this.fullName}/blob`,
+      fetcher: async () => await this.git.getBlob(resolvedRef, filepath),
+      params: {
+        resolvedRef,
+        filepath,
+      },
+    });
     return blob;
   }
 }
