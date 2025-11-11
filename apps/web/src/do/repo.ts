@@ -302,9 +302,12 @@ class RepoBase extends DurableObject<Env> {
   }
 
   async getCommit(commitOid: string) {
-    const commit = await this.git.getCommit(commitOid);
-    console.log(commit);
-    return commit;
+    const result = await cache.getOrSetJson({
+      key: `${this.fullName}/commit/${commitOid}`,
+      fetcher: async () => await this.git.getCommit(commitOid),
+    });
+
+    return result;
   }
 }
 

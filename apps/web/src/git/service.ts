@@ -511,9 +511,9 @@ export class GitService {
           type = "remove";
         }
         if (Aoid === null && Boid === null) {
-          console.log("Something weird happened: both A and B are null");
-          console.log(A);
-          console.log(B);
+          logger.warn(
+            `(get-file-state-changes): Both A and B are null for path ${filepath}`
+          );
           return; // Should not happen
         }
 

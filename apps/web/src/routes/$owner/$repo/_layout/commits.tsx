@@ -2,7 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import { CheckIcon, CopyIcon, GitCommitIcon } from "lucide-react";
-import { useState } from "react";
+import { type MouseEventHandler, useState } from "react";
 import * as z from "zod";
 import { getCommitsQueryOptions } from "@/api/commits";
 import { BranchSelector } from "@/components/branch-selector";
@@ -110,7 +110,10 @@ function copyToClipboard(text: string) {
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy: MouseEventHandler<HTMLButtonElement> = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     copyToClipboard(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1000);
