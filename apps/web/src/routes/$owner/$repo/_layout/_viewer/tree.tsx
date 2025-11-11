@@ -8,8 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { handleAndThrowConvexError } from "@/lib/convex";
 
 const searchSchema = z.object({
-  ref: z.string().optional().default("main"),
-  path: z.string().optional().default(""),
+  ref: z.string().optional(),
+  path: z.string().optional(),
 });
 
 export const Route = createFileRoute("/$owner/$repo/_layout/_viewer/tree")({
@@ -57,7 +57,7 @@ function RouteComponent() {
   const params = Route.useParams();
   const search = Route.useSearch();
   const { owner, repo } = params;
-  const { ref = "main", path = "" } = search;
+  const { ref, path = "" } = search;
 
   const { data: tree } = useSuspenseQuery(
     getTreeQueryOptions({

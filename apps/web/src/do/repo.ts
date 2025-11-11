@@ -244,10 +244,11 @@ class RepoBase extends DurableObject<Env> {
 
   async getBranches() {
     const branches = await this.git.listBranches();
-    return branches;
+    const currentBranch = await this.git.currentBranch();
+    return { branches, currentBranch };
   }
 
-  async getTree(args: { ref: string; path?: string }) {
+  async getTree(args: { ref?: string; path?: string }) {
     const { ref, path } = args;
 
     const resolvedRef = await this.git.resolveRef(ref);
@@ -281,7 +282,7 @@ class RepoBase extends DurableObject<Env> {
     return treeWithLastCommit;
   }
 
-  async getBlob(args: { ref: string; filepath: string }) {
+  async getBlob(args: { ref?: string; filepath: string }) {
     const { ref, filepath } = args;
 
     const resolvedRef = await this.git.resolveRef(ref);

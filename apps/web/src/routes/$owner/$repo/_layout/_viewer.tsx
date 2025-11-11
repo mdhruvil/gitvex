@@ -26,7 +26,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 const searchSchema = z.object({
-  ref: z.string().optional().default("main"),
+  ref: z.string().optional(),
   path: z.string().optional().default(""),
 });
 
@@ -111,7 +111,7 @@ function RouteComponent() {
 type BranchSelectorProps = {
   owner: string;
   repo: string;
-  selectedBranch: string;
+  selectedBranch?: string;
   onBranchChange: (branch: string) => void;
 };
 
@@ -121,19 +121,25 @@ function BranchSelector({
   selectedBranch,
   onBranchChange,
 }: BranchSelectorProps) {
-  const { data: branches, isLoading } = useQuery(
+  const { data, isLoading } = useQuery(
     getBranchesQueryOptions({
       owner,
       repo,
     })
   );
 
+  const branches = data?.branches;
+  const currentBranch = data?.currentBranch;
+
   if (isLoading) {
     return <Skeleton className="h-9 w-[180px]" />;
   }
 
   return (
-    <Select onValueChange={onBranchChange} value={selectedBranch}>
+    <Select
+      onValueChange={onBranchChange}
+      value={selectedBranch ?? currentBranch ?? "HEAD"}
+    >
       <SelectTrigger className="w-[180px]">
         <div className="flex items-center gap-2">
           <GitBranchIcon className="size-4" />

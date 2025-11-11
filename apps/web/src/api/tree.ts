@@ -17,7 +17,7 @@ const highlighterPromise = createHighlighter({
 export const getTreeFnSchema = z.object({
   owner: z.string(),
   repo: z.string(),
-  ref: z.string().default("HEAD"),
+  ref: z.string().optional(),
   path: z.string().optional(),
 });
 
@@ -114,7 +114,7 @@ function getLanguageFromFilename(filename: string): BundledLanguage {
 export const getBlobFnSchema = z.object({
   owner: z.string(),
   repo: z.string(),
-  ref: z.string().default("HEAD"),
+  ref: z.string().optional(),
   filepath: z.string(),
 });
 
