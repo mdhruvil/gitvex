@@ -13,8 +13,11 @@ export const getBranchesFn = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const fullName = `${data.owner}/${data.repo}`;
     const stub = getRepoDOStub(fullName);
-    const branches = await stub.getBranches();
-    return branches;
+    const result = await stub.getBranches();
+    return {
+      branches: result.branches,
+      currentBranch: result.currentBranch,
+    };
   });
 
 export const getBranchesQueryOptions = (

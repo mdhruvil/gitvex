@@ -15,7 +15,7 @@ import { handleAndThrowConvexError } from "@/lib/convex";
 import { formatBytes, getMimeType } from "@/lib/utils";
 
 const searchSchema = z.object({
-  ref: z.string().optional().default("main"),
+  ref: z.string().optional(),
   path: z.string(),
 });
 
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/$owner/$repo/_layout/_viewer/blob")({
         getBlobQueryOptions({
           owner: params.owner,
           repo: params.repo,
-          ref: deps.ref || "main",
+          ref: deps.ref,
           filepath: deps.filepath,
         })
       )
@@ -57,7 +57,7 @@ function RouteComponent() {
   const params = Route.useParams();
   const search = Route.useSearch();
   const { owner, repo } = params;
-  const { ref = "main", path: filepath } = search;
+  const { ref, path: filepath } = search;
 
   const { data: blob } = useSuspenseQuery(
     getBlobQueryOptions({

@@ -1,5 +1,5 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   CheckIcon,
@@ -8,6 +8,7 @@ import {
   GitCommitIcon,
 } from "lucide-react";
 import { useState } from "react";
+import * as z from "zod";
 import { getBranchesQueryOptions } from "@/api/branches";
 import { getCommitsQueryOptions } from "@/api/commits";
 import { Button } from "@/components/ui/button";
@@ -22,15 +23,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { handleAndThrowConvexError } from "@/lib/convex";
 import { cn } from "@/lib/utils";
 
+const searchSchema = z.object({
+  ref: z.string().optional(),
+});
+
 export const Route = createFileRoute("/$owner/$repo/_layout/commits")({
   component: RouteComponent,
-  loader: async ({ params, context: { queryClient } }) => {
+  validateSearch: searchSchema,
+  loaderDeps: ({ search }) => ({
+    ref: search.ref,
+  }),
+  loader: async ({ params, context: { queryClient }, deps }) => {
     await queryClient
       .ensureQueryData(
         getCommitsQueryOptions({
           owner: params.owner,
           repo: params.repo,
-          ref: "main",
+          ref: deps.ref,
         })
       )
       .catch(handleAndThrowConvexError);
@@ -133,13 +142,15 @@ function CopyButton({ text }: { text: string }) {
 function RouteComponent() {
   const params = Route.useParams();
   const { owner, repo } = params;
-  const [selectedBranch, setSelectedBranch] = useState<string>("main");
+  const { ref } = Route.useSearch();
+
+  const navigate = useNavigate();
 
   const { data } = useSuspenseQuery(
     getCommitsQueryOptions({
       owner,
       repo,
-      ref: selectedBranch,
+      ref,
     })
   );
 
@@ -164,10 +175,15 @@ function RouteComponent() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-semibold text-2xl">Commits</h1>
         <BranchSelector
-          onBranchChange={setSelectedBranch}
+          onBranchChange={(newBranch) => {
+            navigate({
+              to: ".",
+              search: { ref: newBranch },
+            });
+          }}
           owner={owner}
           repo={repo}
-          selectedBranch={selectedBranch}
+          selectedBranch={ref}
         />
       </div>
 
@@ -256,22 +272,27 @@ function BranchSelector({
 }: {
   owner: string;
   repo: string;
-  selectedBranch: string;
+  selectedBranch?: string;
   onBranchChange: (branch: string) => void;
 }) {
-  const { data: branches, isLoading } = useQuery(
+  const { data, isLoading } = useQuery(
     getBranchesQueryOptions({
       owner,
       repo,
     })
   );
+  const branches = data?.branches;
+  const currentBranch = data?.currentBranch;
 
   if (isLoading) {
     return <Skeleton className="h-9 w-[180px]" />;
   }
 
   return (
-    <Select onValueChange={onBranchChange} value={selectedBranch}>
+    <Select
+      onValueChange={onBranchChange}
+      value={selectedBranch ?? currentBranch ?? "HEAD"}
+    >
       <SelectTrigger className="w-[180px]">
         <div className="flex items-center gap-2">
           <GitBranchIcon className="size-4" />

@@ -4,7 +4,7 @@ import { getBlobFn } from "@/api/tree";
 import { getMimeType } from "@/lib/utils";
 
 const searchSchema = z.object({
-  ref: z.string().optional().default("main"),
+  ref: z.string().optional(),
   path: z.string(),
 });
 
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/$owner/$repo/_layout/_viewer/raw")({
       GET: async ({ request, params }) => {
         const url = new URL(request.url);
         const searchParams = url.searchParams;
-        const ref = searchParams.get("ref") || "main";
+        const ref = searchParams.get("ref") ?? undefined;
         const filepath = searchParams.get("path") || "";
 
         if (!filepath) {

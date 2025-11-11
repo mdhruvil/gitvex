@@ -106,6 +106,20 @@ export class GitService {
     }
   }
 
+  async currentBranch() {
+    try {
+      const branch = await git.currentBranch({
+        fs: this.fs,
+        gitdir: this.gitdir,
+        fullname: false,
+      });
+      return branch ?? null;
+    } catch (error) {
+      logger.warn("(current-branch) Failed to get current branch: ", error);
+      return null;
+    }
+  }
+
   async listTags(): Promise<Array<{ ref: string; oid: string }>> {
     try {
       const tagRefs = await git.listTags({
@@ -367,7 +381,7 @@ export class GitService {
     }
   }
 
-  async resolveRef(ref: string) {
+  async resolveRef(ref = "HEAD") {
     try {
       const oid = await git.resolveRef({
         fs: this.fs,
