@@ -1,9 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { type BundledLanguage, createHighlighter } from "shiki";
+import { createHighlighter } from "shiki";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import * as z from "zod";
 import { getRepoDOStub } from "@/do/repo";
+import { getLanguageFromFilename } from "@/lib/utils";
 
 // Create highlighter instance with JavaScript regex engine
 const highlighterPromise = createHighlighter({
@@ -40,76 +41,6 @@ export const getTreeQueryOptions = (data: z.infer<typeof getTreeFnSchema>) =>
     ),
     queryFn: async () => await getTreeFn({ data }),
   });
-
-function getLanguageFromFilename(filename: string): BundledLanguage {
-  const extension = filename.split(".").pop()?.toLowerCase() || "";
-
-  const languageMap: Record<string, BundledLanguage> = {
-    js: "javascript",
-    mjs: "javascript",
-    cjs: "javascript",
-    jsx: "javascript",
-    ts: "typescript",
-    mts: "typescript",
-    tsx: "typescript",
-    py: "python",
-    rb: "ruby",
-    go: "go",
-    rs: "rust",
-    java: "java",
-    c: "c",
-    cpp: "cpp",
-    cc: "cpp",
-    cxx: "cpp",
-    h: "c",
-    hpp: "cpp",
-    cs: "csharp",
-    php: "php",
-    swift: "swift",
-    kt: "kotlin",
-    scala: "scala",
-    sh: "bash",
-    bash: "bash",
-    zsh: "bash",
-    fish: "fish",
-    ps1: "powershell",
-    r: "r",
-    lua: "lua",
-    perl: "perl",
-    pl: "perl",
-    sql: "sql",
-    html: "html",
-    htm: "html",
-    xml: "xml",
-    css: "css",
-    scss: "scss",
-    sass: "sass",
-    less: "less",
-    json: "json",
-    jsonc: "jsonc",
-    yaml: "yaml",
-    yml: "yaml",
-    toml: "toml",
-    ini: "ini",
-    md: "markdown",
-    markdown: "markdown",
-    tex: "latex",
-    vue: "vue",
-    svelte: "svelte",
-    astro: "astro",
-    graphql: "graphql",
-    gql: "graphql",
-    dockerfile: "dockerfile",
-    makefile: "makefile",
-    proto: "proto",
-  };
-
-  const filenameUpper = filename.toUpperCase();
-  if (filenameUpper === "DOCKERFILE") return "dockerfile";
-  if (filenameUpper === "MAKEFILE") return "makefile";
-
-  return languageMap[extension] || "text";
-}
 
 export const getBlobFnSchema = z.object({
   owner: z.string(),

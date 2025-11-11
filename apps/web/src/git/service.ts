@@ -454,6 +454,147 @@ export class GitService {
     return false;
   }
 
+  async getFileStateChanges(
+    oldCommit: string | undefined,
+    newCommit: string | undefined
+  ) {
+    type File =
+      | {
+          isBinary: false;
+          content: string;
+        }
+      | {
+          isBinary: true;
+          content: null;
+        };
+
+    type Change = {
+      type: "add" | "modify" | "remove";
+      path: string;
+      old: File | null;
+      new: File | null;
+    };
+
+    // Use git.walk to compare the trees of the two commits
+    const data = await git.walk({
+      fs: this.fs,
+      gitdir: this.gitdir,
+      trees: [git.TREE({ ref: oldCommit }), git.TREE({ ref: newCommit })],
+      map: async (filepath, [A, B]): Promise<Change | undefined> => {
+        // ignore directories
+        if (filepath === ".") {
+          return;
+        }
+
+        // A and B are "TreeEntry" objects.
+        // We need to check their type (blob or tree)
+        const Atype = A ? await A.type() : null;
+        const Btype = B ? await B.type() : null;
+
+        if (Atype === "tree" || Btype === "tree") {
+          return;
+        }
+
+        // generate oids (object IDs)
+        const Aoid = A ? await A.oid() : null;
+        const Boid = B ? await B.oid() : null;
+
+        // determine modification type
+        let type: "equal" | "modify" | "add" | "remove" = "equal";
+        if (Aoid !== Boid) {
+          type = "modify";
+        }
+        if (Aoid === null && Boid !== null) {
+          type = "add";
+        }
+        if (Boid === null && Aoid !== null) {
+          type = "remove";
+        }
+        if (Aoid === null && Boid === null) {
+          console.log("Something weird happened: both A and B are null");
+          console.log(A);
+          console.log(B);
+          return; // Should not happen
+        }
+
+        // Don't return 'equal' files
+        if (type === "equal") {
+          return;
+        }
+
+        const oldContent = await A?.content();
+        const newContent = await B?.content();
+
+        const isOldBinary = oldContent && this.detectBinary(oldContent);
+        const isNewBinary = newContent && this.detectBinary(newContent);
+
+        let oldFile: File | null = null;
+
+        if (isOldBinary) {
+          oldFile = { isBinary: true, content: null };
+        } else if (oldContent) {
+          oldFile = {
+            isBinary: false,
+            content: new TextDecoder().decode(oldContent),
+          };
+        }
+
+        let newFile: File | null = null;
+
+        if (isNewBinary) {
+          newFile = { isBinary: true, content: null };
+        } else if (newContent) {
+          newFile = {
+            isBinary: false,
+            content: new TextDecoder().decode(newContent),
+          };
+        }
+
+        return {
+          type,
+          path: filepath,
+          old: oldFile,
+          new: newFile,
+        };
+      },
+    });
+    return data as Change[];
+  }
+
+  async getCommit(commitOid: string) {
+    try {
+      const commit = await git.readCommit({
+        fs: this.fs,
+        gitdir: this.gitdir,
+        cache: this.cache,
+        oid: commitOid,
+      });
+      if (!commit.commit.parent || commit.commit.parent.length === 0) {
+        logger.info(
+          `(get-commit): Commit ${commitOid} is a root commit. Comparing with empty tree.`
+        );
+        return {
+          commit,
+          changes: await this.getFileStateChanges(undefined, commitOid),
+        };
+      }
+
+      const parentOid = commit.commit.parent[0];
+      return {
+        commit,
+        changes: await this.getFileStateChanges(parentOid, commitOid),
+      };
+    } catch (error) {
+      logger.error(
+        `(get-commit) Failed to get commit changes for ${commitOid}: ${error}`
+      );
+      return {
+        commit: null,
+        changes: [],
+      };
+    }
+  }
+
   // TODO: simplify this and some docs
   async applyRefUpdates(
     commands: Array<{ oldOid: string; newOid: string; ref: string }>,

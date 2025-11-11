@@ -300,6 +300,12 @@ class RepoBase extends DurableObject<Env> {
     });
     return blob;
   }
+
+  async getCommit(commitOid: string) {
+    const commit = await this.git.getCommit(commitOid);
+    console.log(commit);
+    return commit;
+  }
 }
 
 // Export your named class as defined in your wrangler config

@@ -32,6 +32,16 @@ export function getRouter() {
     createTanStackRouter({
       routeTree,
       defaultPreload: "viewport",
+      scrollRestoration(opts) {
+        const pathname = opts.location.pathname;
+
+        // Disable scroll restoration for commit viewer pages
+        if (/^\/[^/]+\/[^/]+\/commits\/[0-9a-f]{7,40}$/i.test(pathname)) {
+          return false;
+        }
+
+        return true;
+      },
       defaultPendingComponent: () => <Loader />,
       defaultNotFoundComponent: () => <div>Not Found</div>,
       context: { queryClient, convexClient: convex, convexQueryClient },

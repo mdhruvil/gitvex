@@ -82,7 +82,7 @@
       }
     },
     {
-      "includes": ["**/$.ts", "$.tsx", "**/$*.tsx"],
+      "includes": ["**/$.ts", "$.tsx", "**/$*.tsx", "**/*_.$*.tsx"],
       "linter": {
         "rules": {
           "style": {

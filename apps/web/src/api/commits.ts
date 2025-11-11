@@ -31,3 +31,27 @@ export const getCommitsQueryOptions = (
     ),
     queryFn: async () => await getCommitsFn({ data }),
   });
+
+export const getCommitSchema = z.object({
+  owner: z.string(),
+  repo: z.string(),
+  commitOid: z.string(),
+});
+
+export const getCommitFn = createServerFn({ method: "GET" })
+  .inputValidator(getCommitSchema)
+  .handler(async ({ data }) => {
+    const fullName = `${data.owner}/${data.repo}`;
+    const stub = getRepoDOStub(fullName);
+    const { commit, changes } = await stub.getCommit(data.commitOid);
+    return {
+      commit,
+      changes,
+    };
+  });
+
+export const getCommitQueryOptions = (data: z.infer<typeof getCommitSchema>) =>
+  queryOptions({
+    queryKey: ["commit", data.owner, data.repo, data.commitOid],
+    queryFn: async () => await getCommitFn({ data }),
+  });
