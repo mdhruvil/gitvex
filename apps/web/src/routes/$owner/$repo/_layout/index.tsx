@@ -1,7 +1,7 @@
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@gitvex/backend/convex/_generated/api";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { BookOpenIcon, FileIcon, FolderIcon, TerminalIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -9,6 +9,7 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { z } from "zod";
 import { getBlobQueryOptions, getTreeQueryOptions } from "@/api/tree";
+import { BranchSelector } from "@/components/branch-selector";
 import { components } from "@/components/md-components";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,6 +65,8 @@ function RouteComponent() {
   const { owner, repo } = params;
   const { ref } = search;
 
+  const navigate = useNavigate();
+
   const { data: tree } = useSuspenseQuery(
     getTreeQueryOptions({
       owner,
@@ -113,6 +116,19 @@ function RouteComponent() {
       {repository.description && (
         <p className="text-muted-foreground">{repository.description}</p>
       )}
+      <div className="flex items-center justify-end">
+        <BranchSelector
+          onBranchChange={(newBranch) => {
+            navigate({
+              to: ".",
+              search: { ref: newBranch },
+            });
+          }}
+          owner={owner}
+          repo={repo}
+          selectedBranch={ref}
+        />
+      </div>
       <div className="divide-y overflow-hidden rounded-lg border">
         {sortedTree.map((entry) => {
           const isDirectory = entry.type === "tree";
