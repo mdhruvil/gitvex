@@ -35,7 +35,9 @@ export const getTreeFn = createServerFn({ method: "GET" })
 
 export const getTreeQueryOptions = (data: z.infer<typeof getTreeFnSchema>) =>
   queryOptions({
-    queryKey: ["tree", data.owner, data.repo, data.ref, data.path],
+    queryKey: ["tree", data.owner, data.repo, data.ref, data.path].filter(
+      Boolean
+    ),
     queryFn: async () => await getTreeFn({ data }),
   });
 
