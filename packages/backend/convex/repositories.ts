@@ -17,10 +17,28 @@ export const getByOwner = query({
       .withIndex("by_owner", (q) => q.eq("owner", args.owner))
       .collect();
 
+    if (!repos || repos.length === 0) {
+      return {
+        owner: null,
+        repos: [],
+      };
+    }
+
+    const ownerData = await authComponent.getAnyUserById(ctx, repos[0].ownerId);
+
     // Filter out private repositories unless the user is the owner
-    return repos.filter(
-      (repo) => !repo.isPrivate || (user && repo.ownerId === user._id)
-    );
+    return {
+      owner: {
+        _id: ownerData?._id,
+        username: ownerData?.username,
+        name: ownerData?.name,
+        email: ownerData?.email,
+        createdAt: ownerData?.createdAt,
+      },
+      repos: repos.filter(
+        (repo) => !repo.isPrivate || (user && repo.ownerId === user._id)
+      ),
+    };
   },
 });
 
