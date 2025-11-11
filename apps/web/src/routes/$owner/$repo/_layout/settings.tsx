@@ -3,12 +3,13 @@ import { api } from "@gitvex/backend/convex/_generated/api";
 import type { Id } from "@gitvex/backend/convex/_generated/dataModel";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { AlertCircleIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { getSessionOptions } from "@/api/session";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,6 +65,9 @@ function RouteComponent() {
       name: repo,
     })
   );
+  const { data: session } = useSuspenseQuery(getSessionOptions);
+
+  const isOwner = session?.user.id === repository?.ownerId;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -100,6 +104,10 @@ function RouteComponent() {
 
   const isSubmitting = updateRepoMutation.isPending;
   const hasChanges = form.formState.isDirty;
+
+  if (!isOwner) {
+    return <Navigate params={{ owner, repo }} to="/$owner/$repo" />;
+  }
 
   return (
     <div className="container mx-auto max-w-3xl px-5 py-8 md:px-0">
