@@ -3,7 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckIcon, CopyIcon, DownloadIcon, FileIcon } from "lucide-react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
-import ShikiHighlighter, { createJavaScriptRegexEngine } from "react-shiki";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { z } from "zod";
@@ -103,8 +102,6 @@ function RouteComponent() {
       blob.isBinary = true;
     }
   }
-
-  const language = getLanguageFromFilename(filename);
 
   const isMarkdown = filename.toLowerCase().match(/\.(md|mdx|markdown)$/);
 
@@ -212,90 +209,15 @@ function RouteComponent() {
               </ReactMarkdown>
             </div>
           )}
-          {!blob.isBinary && !isMarkdown && (
-            <ShikiHighlighter
-              className="text-sm leading-relaxed"
-              engine={createJavaScriptRegexEngine()}
-              language={language}
-              showLanguage={false}
-              showLineNumbers
-              theme="github-dark-default"
-            >
-              {content}
-            </ShikiHighlighter>
+          {!blob.isBinary && !isMarkdown && blob.highlightedHtml && (
+            <div
+              className="shiki-wrapper text-sm leading-relaxed [counter-reset:line] [&_pre]:overflow-x-auto [&_pre]:bg-transparent! [&_pre]:p-4! [&_pre_.line:before]:mr-4 [&_pre_.line:before]:inline-block [&_pre_.line:before]:w-8 [&_pre_.line:before]:text-right [&_pre_.line:before]:text-muted-foreground [&_pre_.line:before]:[content:counter(line)] [&_pre_.line]:[counter-increment:line]"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki generates safe HTML on server
+              dangerouslySetInnerHTML={{ __html: blob.highlightedHtml }}
+            />
           )}
         </div>
       </div>
     </div>
   );
-}
-
-function getLanguageFromFilename(filename: string): string {
-  const extension = filename.split(".").pop()?.toLowerCase() || "";
-
-  const languageMap: Record<string, string> = {
-    js: "javascript",
-    mjs: "javascript",
-    cjs: "javascript",
-    jsx: "javascript",
-    ts: "typescript",
-    mts: "typescript",
-    tsx: "typescript",
-    py: "python",
-    rb: "ruby",
-    go: "go",
-    rs: "rust",
-    java: "java",
-    c: "c",
-    cpp: "cpp",
-    cc: "cpp",
-    cxx: "cpp",
-    h: "c",
-    hpp: "cpp",
-    cs: "csharp",
-    php: "php",
-    swift: "swift",
-    kt: "kotlin",
-    scala: "scala",
-    sh: "bash",
-    bash: "bash",
-    zsh: "bash",
-    fish: "fish",
-    ps1: "powershell",
-    r: "r",
-    lua: "lua",
-    perl: "perl",
-    pl: "perl",
-    sql: "sql",
-    html: "html",
-    htm: "html",
-    xml: "xml",
-    css: "css",
-    scss: "scss",
-    sass: "sass",
-    less: "less",
-    json: "json",
-    jsonc: "jsonc",
-    yaml: "yaml",
-    yml: "yaml",
-    toml: "toml",
-    ini: "ini",
-    md: "markdown",
-    markdown: "markdown",
-    tex: "latex",
-    vue: "vue",
-    svelte: "svelte",
-    astro: "astro",
-    graphql: "graphql",
-    gql: "graphql",
-    dockerfile: "dockerfile",
-    makefile: "makefile",
-    proto: "proto",
-  };
-
-  const filenameUpper = filename.toUpperCase();
-  if (filenameUpper === "DOCKERFILE") return "dockerfile";
-  if (filenameUpper === "MAKEFILE") return "makefile";
-
-  return languageMap[extension] || "text";
 }

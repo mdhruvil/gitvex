@@ -3,14 +3,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { BookOpenIcon, FileIcon, FolderIcon, TerminalIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import ShikiHighlighter from "react-shiki";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { z } from "zod";
 import { getBlobQueryOptions, getTreeQueryOptions } from "@/api/tree";
 import { components } from "@/components/md-components";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const searchSchema = z.object({
@@ -23,7 +21,7 @@ export const Route = createFileRoute("/$owner/$repo/_layout/")({
   loaderDeps: ({ search }) => ({
     ref: search.ref,
   }),
-  loader: async ({ params, context: { queryClient }, deps }) => {
+  loader: async ({ params, context: { queryClient }, deps, location }) => {
     await queryClient.ensureQueryData(
       getTreeQueryOptions({
         owner: params.owner,
@@ -32,6 +30,10 @@ export const Route = createFileRoute("/$owner/$repo/_layout/")({
         path: "",
       })
     );
+
+    return {
+      url: location.url,
+    };
   },
   pendingComponent: IndexPendingComponent,
 });
@@ -212,20 +214,20 @@ function EmptyRepositoryInstructions({
   owner: string;
   repo: string;
 }) {
-  const repoUrl = `${window.location.origin}/${owner}/${repo}.git`;
+  const data = Route.useLoaderData();
+  const url = new URL(data.url);
+
+  const repoUrl = `${url.origin ?? window.location.origin}/${owner}/${repo}.git`;
 
   return (
     <div className="py-12">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto space-y-6">
         <div className="text-center">
-          <h2 className="font-bold text-xl">No files found.</h2>
+          <h2 className="font-bold text-xl">This repository is empty.</h2>
           <p className="mt-2 text-muted-foreground">
-            Get started by creating a new repository on the command line or
-            pushing an existing repository
+            Get started by pushing an existing repository or creating a new one.
           </p>
         </div>
-
-        <Separator />
 
         <Card>
           <CardHeader>
@@ -271,14 +273,9 @@ git push -u origin main`}
 
 function CodeBlock({ code }: { code: string }) {
   return (
-    <ShikiHighlighter
-      className="text-sm leading-relaxed"
-      language="bash"
-      showLanguage={false}
-      theme="github-dark-default"
-    >
-      {code}
-    </ShikiHighlighter>
+    <pre>
+      <code className="text-sm leading-relaxed">{code}</code>
+    </pre>
   );
 }
 

@@ -48,6 +48,9 @@ const formSchema = z.object({
     .regex(/^[a-zA-Z0-9_-]+$/, {
       message:
         "Repository name can only contain letters, numbers, hyphens, and underscores",
+    })
+    .refine((val) => val.endsWith(".git") === false, {
+      message: "Repository name cannot end with .git",
     }),
   description: z
     .string()

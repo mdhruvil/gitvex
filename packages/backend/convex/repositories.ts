@@ -182,6 +182,10 @@ export const create = mutation({
 
     const username = user.username;
 
+    if (args.name.endsWith(".git")) {
+      throw new ConvexError("Repository name cannot end with .git");
+    }
+
     if (!/^[a-zA-Z0-9_-]+$/.test(args.name)) {
       // Validate repository name (basic validation)
       throw new ConvexError(
