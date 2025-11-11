@@ -1,8 +1,8 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import { CheckIcon, CopyIcon, GitCommitIcon } from "lucide-react";
-import { useState } from "react";
+import { type MouseEventHandler, useState } from "react";
 import * as z from "zod";
 import { getCommitsQueryOptions } from "@/api/commits";
 import { BranchSelector } from "@/components/branch-selector";
@@ -110,7 +110,10 @@ function copyToClipboard(text: string) {
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy: MouseEventHandler<HTMLButtonElement> = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     copyToClipboard(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1000);
@@ -192,46 +195,56 @@ function RouteComponent() {
                 const commitMessage = commit.commit.message.split("\n")[0];
 
                 return (
-                  <div
-                    className={cn(
-                      "group relative flex items-start gap-3 p-4 transition-colors hover:bg-muted/50",
-                      index === 0 && "rounded-t-lg",
-                      index === commits.length - 1 && "rounded-b-lg"
-                    )}
+                  <Link
+                    className="block"
                     key={commit.oid}
+                    params={{
+                      owner,
+                      repo,
+                      commitId: commit.oid,
+                    }}
+                    to="/$owner/$repo/commits/$commitId"
                   >
-                    {/* Commit Icon */}
-                    <div className="mt-1 shrink-0">
-                      <GitCommitIcon className="size-4 text-muted-foreground" />
-                    </div>
-
-                    {/* Main Content */}
-                    <div className="min-w-0 flex-1">
-                      {/* Commit Message */}
-                      <div className="mb-1">
-                        <span className="font-semibold text-foreground">
-                          {commitMessage}
-                        </span>
+                    <div
+                      className={cn(
+                        "group relative flex items-start gap-3 p-4 transition-colors hover:bg-muted/50",
+                        index === 0 && "rounded-t-lg",
+                        index === commits.length - 1 && "rounded-b-lg"
+                      )}
+                    >
+                      {/* Commit Icon */}
+                      <div className="mt-1 shrink-0">
+                        <GitCommitIcon className="size-4 text-muted-foreground" />
                       </div>
 
-                      {/* Author and Time */}
-                      <div className="flex flex-wrap items-center gap-1 text-muted-foreground text-xs">
-                        <span className="font-medium">
-                          {commit.commit.author.name}
-                        </span>
-                        <span>committed</span>
-                        <span>
-                          {formatRelativeTime(commit.commit.author.timestamp)}
-                        </span>
+                      {/* Main Content */}
+                      <div className="min-w-0 flex-1">
+                        {/* Commit Message */}
+                        <div className="mb-1">
+                          <span className="font-semibold text-foreground">
+                            {commitMessage}
+                          </span>
+                        </div>
+
+                        {/* Author and Time */}
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground text-xs">
+                          <span className="font-medium">
+                            {commit.commit.author.name}
+                          </span>
+                          <span>committed</span>
+                          <span>
+                            {formatRelativeTime(commit.commit.author.timestamp)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Commit Hash and Actions */}
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-xs">{shortHash}</span>
+                        <CopyButton text={commit.oid} />
                       </div>
                     </div>
-
-                    {/* Commit Hash and Actions */}
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-xs">{shortHash}</span>
-                      <CopyButton text={commit.oid} />
-                    </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

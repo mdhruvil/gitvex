@@ -31,6 +31,7 @@ import { Route as OwnerRepoLayoutViewerRouteImport } from './routes/$owner/$repo
 import { Route as OwnerRepoLayoutIssuesIndexRouteImport } from './routes/$owner/$repo/_layout/issues/index'
 import { Route as OwnerRepoLayoutIssuesNewRouteImport } from './routes/$owner/$repo/_layout/issues/new'
 import { Route as OwnerRepoLayoutIssuesIssueNumberRouteImport } from './routes/$owner/$repo/_layout/issues/$issueNumber'
+import { Route as OwnerRepoLayoutCommitsCommitIdRouteImport } from './routes/$owner/$repo/_layout/commits_.$commitId'
 import { Route as OwnerRepoLayoutViewerTreeRouteImport } from './routes/$owner/$repo/_layout/_viewer/tree'
 import { Route as OwnerRepoLayoutViewerRawRouteImport } from './routes/$owner/$repo/_layout/_viewer/raw'
 import { Route as OwnerRepoLayoutViewerBlobRouteImport } from './routes/$owner/$repo/_layout/_viewer/blob'
@@ -142,6 +143,12 @@ const OwnerRepoLayoutIssuesIssueNumberRoute =
     path: '/issues/$issueNumber',
     getParentRoute: () => OwnerRepoLayoutRoute,
   } as any)
+const OwnerRepoLayoutCommitsCommitIdRoute =
+  OwnerRepoLayoutCommitsCommitIdRouteImport.update({
+    id: '/commits_/$commitId',
+    path: '/commits/$commitId',
+    getParentRoute: () => OwnerRepoLayoutRoute,
+  } as any)
 const OwnerRepoLayoutViewerTreeRoute =
   OwnerRepoLayoutViewerTreeRouteImport.update({
     id: '/tree',
@@ -180,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/$owner/$repo/blob': typeof OwnerRepoLayoutViewerBlobRoute
   '/$owner/$repo/raw': typeof OwnerRepoLayoutViewerRawRoute
   '/$owner/$repo/tree': typeof OwnerRepoLayoutViewerTreeRoute
+  '/$owner/$repo/commits/$commitId': typeof OwnerRepoLayoutCommitsCommitIdRoute
   '/$owner/$repo/issues/$issueNumber': typeof OwnerRepoLayoutIssuesIssueNumberRoute
   '/$owner/$repo/issues/new': typeof OwnerRepoLayoutIssuesNewRoute
   '/$owner/$repo/issues': typeof OwnerRepoLayoutIssuesIndexRoute
@@ -202,6 +210,7 @@ export interface FileRoutesByTo {
   '/$owner/$repo/blob': typeof OwnerRepoLayoutViewerBlobRoute
   '/$owner/$repo/raw': typeof OwnerRepoLayoutViewerRawRoute
   '/$owner/$repo/tree': typeof OwnerRepoLayoutViewerTreeRoute
+  '/$owner/$repo/commits/$commitId': typeof OwnerRepoLayoutCommitsCommitIdRoute
   '/$owner/$repo/issues/$issueNumber': typeof OwnerRepoLayoutIssuesIssueNumberRoute
   '/$owner/$repo/issues/new': typeof OwnerRepoLayoutIssuesNewRoute
   '/$owner/$repo/issues': typeof OwnerRepoLayoutIssuesIndexRoute
@@ -229,6 +238,7 @@ export interface FileRoutesById {
   '/$owner/$repo/_layout/_viewer/blob': typeof OwnerRepoLayoutViewerBlobRoute
   '/$owner/$repo/_layout/_viewer/raw': typeof OwnerRepoLayoutViewerRawRoute
   '/$owner/$repo/_layout/_viewer/tree': typeof OwnerRepoLayoutViewerTreeRoute
+  '/$owner/$repo/_layout/commits_/$commitId': typeof OwnerRepoLayoutCommitsCommitIdRoute
   '/$owner/$repo/_layout/issues/$issueNumber': typeof OwnerRepoLayoutIssuesIssueNumberRoute
   '/$owner/$repo/_layout/issues/new': typeof OwnerRepoLayoutIssuesNewRoute
   '/$owner/$repo/_layout/issues/': typeof OwnerRepoLayoutIssuesIndexRoute
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/$owner/$repo/blob'
     | '/$owner/$repo/raw'
     | '/$owner/$repo/tree'
+    | '/$owner/$repo/commits/$commitId'
     | '/$owner/$repo/issues/$issueNumber'
     | '/$owner/$repo/issues/new'
     | '/$owner/$repo/issues'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/$owner/$repo/blob'
     | '/$owner/$repo/raw'
     | '/$owner/$repo/tree'
+    | '/$owner/$repo/commits/$commitId'
     | '/$owner/$repo/issues/$issueNumber'
     | '/$owner/$repo/issues/new'
     | '/$owner/$repo/issues'
@@ -302,6 +314,7 @@ export interface FileRouteTypes {
     | '/$owner/$repo/_layout/_viewer/blob'
     | '/$owner/$repo/_layout/_viewer/raw'
     | '/$owner/$repo/_layout/_viewer/tree'
+    | '/$owner/$repo/_layout/commits_/$commitId'
     | '/$owner/$repo/_layout/issues/$issueNumber'
     | '/$owner/$repo/_layout/issues/new'
     | '/$owner/$repo/_layout/issues/'
@@ -465,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerRepoLayoutIssuesIssueNumberRouteImport
       parentRoute: typeof OwnerRepoLayoutRoute
     }
+    '/$owner/$repo/_layout/commits_/$commitId': {
+      id: '/$owner/$repo/_layout/commits_/$commitId'
+      path: '/commits/$commitId'
+      fullPath: '/$owner/$repo/commits/$commitId'
+      preLoaderRoute: typeof OwnerRepoLayoutCommitsCommitIdRouteImport
+      parentRoute: typeof OwnerRepoLayoutRoute
+    }
     '/$owner/$repo/_layout/_viewer/tree': {
       id: '/$owner/$repo/_layout/_viewer/tree'
       path: '/tree'
@@ -527,6 +547,7 @@ interface OwnerRepoLayoutRouteChildren {
   OwnerRepoLayoutPullsRoute: typeof OwnerRepoLayoutPullsRoute
   OwnerRepoLayoutSettingsRoute: typeof OwnerRepoLayoutSettingsRoute
   OwnerRepoLayoutIndexRoute: typeof OwnerRepoLayoutIndexRoute
+  OwnerRepoLayoutCommitsCommitIdRoute: typeof OwnerRepoLayoutCommitsCommitIdRoute
   OwnerRepoLayoutIssuesIssueNumberRoute: typeof OwnerRepoLayoutIssuesIssueNumberRoute
   OwnerRepoLayoutIssuesNewRoute: typeof OwnerRepoLayoutIssuesNewRoute
   OwnerRepoLayoutIssuesIndexRoute: typeof OwnerRepoLayoutIssuesIndexRoute
@@ -538,6 +559,7 @@ const OwnerRepoLayoutRouteChildren: OwnerRepoLayoutRouteChildren = {
   OwnerRepoLayoutPullsRoute: OwnerRepoLayoutPullsRoute,
   OwnerRepoLayoutSettingsRoute: OwnerRepoLayoutSettingsRoute,
   OwnerRepoLayoutIndexRoute: OwnerRepoLayoutIndexRoute,
+  OwnerRepoLayoutCommitsCommitIdRoute: OwnerRepoLayoutCommitsCommitIdRoute,
   OwnerRepoLayoutIssuesIssueNumberRoute: OwnerRepoLayoutIssuesIssueNumberRoute,
   OwnerRepoLayoutIssuesNewRoute: OwnerRepoLayoutIssuesNewRoute,
   OwnerRepoLayoutIssuesIndexRoute: OwnerRepoLayoutIssuesIndexRoute,
