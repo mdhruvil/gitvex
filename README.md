@@ -5,6 +5,7 @@ A self-hosted GitHub alternative built to run on serverless platform like Cloudf
 ## Features
 
 - **Git Repository Hosting** - Host Git repositories with full Git protocol support
+- **Private Repository Support** - Create and manage private repositories
 - **Serverless Architecture** - Deploy on Cloudflare Workers with Durable Objects for SQLite-backed storage
 - **Issues & Pull Requests(soon)** - Track bugs, features, and manage code reviews
 - **Real-time Collaboration** - Built on Convex for reactive, real-time updates
