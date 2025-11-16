@@ -15,6 +15,7 @@ import {
   GitPullRequestIcon,
   SettingsIcon,
 } from "lucide-react";
+import * as z from "zod";
 import { getBranchesQueryOptions } from "@/api/branches";
 import { getSessionOptions } from "@/api/session";
 import { NotFoundComponent } from "@/components/404-components";
@@ -30,10 +31,15 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfileButton } from "@/components/user-profile-button";
 import { handleAndThrowConvexError } from "@/lib/convex";
 
+const searchSchema = z.object({
+  ref: z.string().optional(),
+});
+
 export const Route = createFileRoute("/$owner/$repo/_layout")({
   component: RouteComponent,
   errorComponent: ErrorComponent,
   notFoundComponent: NotFoundComponent,
+  validateSearch: searchSchema,
   loader: async ({ params, context: { queryClient } }) => {
     queryClient.prefetchQuery(
       getBranchesQueryOptions({
@@ -55,6 +61,8 @@ export const Route = createFileRoute("/$owner/$repo/_layout")({
 function RouteComponent() {
   const params = Route.useParams();
   const { owner, repo } = params;
+
+  const { ref } = Route.useSearch();
   const pathname = useLocation({
     select: (state) => state.pathname,
   });
@@ -156,13 +164,17 @@ function RouteComponent() {
             >
               <TabsList>
                 <TabsTrigger asChild value="code">
-                  <Link params={params} to="/$owner/$repo">
+                  <Link params={params} search={{ ref }} to="/$owner/$repo">
                     <CodeIcon className="opacity-60" />
                     Code
                   </Link>
                 </TabsTrigger>
                 <TabsTrigger asChild value="commits">
-                  <Link params={params} to="/$owner/$repo/commits">
+                  <Link
+                    params={params}
+                    search={{ ref }}
+                    to="/$owner/$repo/commits"
+                  >
                     <GitCommitHorizontalIcon className="opacity-60" />
                     Commits
                   </Link>
