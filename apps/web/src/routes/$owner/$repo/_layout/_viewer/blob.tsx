@@ -108,8 +108,6 @@ function RouteComponent() {
     }
   }
 
-  const isMarkdown = filename.toLowerCase().match(/\.(md|mdx|markdown)$/);
-
   function onCopyClick() {
     navigator.clipboard.writeText(content);
     setIsCopied(true);
@@ -191,38 +189,91 @@ function RouteComponent() {
           </ButtonGroup>
         </div>
         <div className="overflow-hidden">
-          {blob.isBinary && (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <FileIcon className="mb-4 size-12 text-muted-foreground" />
-              <h3 className="mb-2 font-semibold text-lg">Binary file</h3>
-              <p className="text-muted-foreground text-sm">
-                This file cannot be displayed because it is a binary file.
-              </p>
-              <p className="mt-2 text-muted-foreground text-xs">
-                Size: {formatBytes(blob.size, { decimals: 2 })}
-              </p>
-            </div>
-          )}
-          {!blob.isBinary && isMarkdown && (
-            <div className="m-4">
-              <ReactMarkdown
-                components={components}
-                rehypePlugins={[rehypeRaw]}
-                remarkPlugins={[remarkGfm]}
-              >
-                {content}
-              </ReactMarkdown>
-            </div>
-          )}
-          {!blob.isBinary && !isMarkdown && blob.highlightedHtml && (
-            <div
-              className="shiki-wrapper text-sm leading-relaxed [counter-reset:line] [&_pre]:overflow-x-auto [&_pre]:bg-transparent! [&_pre]:p-4! [&_pre_.line:before]:mr-4 [&_pre_.line:before]:inline-block [&_pre_.line:before]:w-8 [&_pre_.line:before]:text-right [&_pre_.line:before]:text-muted-foreground [&_pre_.line:before]:[content:counter(line)] [&_pre_.line]:[counter-increment:line]"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki generates safe HTML on server
-              dangerouslySetInnerHTML={{ __html: blob.highlightedHtml }}
-            />
-          )}
+          <BlobContent blob={blob} content={content} filename={filename} />
         </div>
       </div>
+    </div>
+  );
+}
+
+type BlobContentProps = {
+  blob: {
+    content: string;
+    size: number;
+    isBinary: boolean;
+    highlightedHtml?: string | null;
+  };
+  filename: string;
+  content: string;
+};
+
+function BlobContent({ blob, filename, content }: BlobContentProps) {
+  const isMarkdown = filename.toLowerCase().match(/\.(md|mdx|markdown)$/);
+  const isImage = filename
+    .toLowerCase()
+    .match(/\.(png|jpe?g|gif|svg|webp|bmp|ico|avif)$/);
+
+  // Handle binary image files
+  if (blob.isBinary && isImage) {
+    return (
+      <div className="flex flex-col items-center justify-center bg-muted/30">
+        {/* biome-ignore lint/correctness/useImageSize: Dynamic image dimensions unknown until loaded */}
+        <img
+          alt={filename}
+          className="max-w-full object-contain"
+          loading="lazy"
+          src={`data:${getMimeType(filename)};base64,${blob.content}`}
+        />
+      </div>
+    );
+  }
+
+  // Handle other binary files
+  if (blob.isBinary) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <FileIcon className="mb-4 size-12 text-muted-foreground" />
+        <h3 className="mb-2 font-semibold text-lg">Binary file</h3>
+        <p className="text-muted-foreground text-sm">
+          This file cannot be displayed because it is a binary file.
+        </p>
+        <p className="mt-2 text-muted-foreground text-xs">
+          Size: {formatBytes(blob.size, { decimals: 2 })}
+        </p>
+      </div>
+    );
+  }
+
+  // Handle markdown files
+  if (isMarkdown) {
+    return (
+      <div className="m-4">
+        <ReactMarkdown
+          components={components}
+          rehypePlugins={[rehypeRaw]}
+          remarkPlugins={[remarkGfm]}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+    );
+  }
+
+  // Handle code files with syntax highlighting
+  if (blob.highlightedHtml) {
+    return (
+      <div
+        className="shiki-wrapper text-sm leading-relaxed [counter-reset:line] [&_pre]:overflow-x-auto [&_pre]:bg-transparent! [&_pre]:p-4! [&_pre_.line:before]:mr-4 [&_pre_.line:before]:inline-block [&_pre_.line:before]:w-8 [&_pre_.line:before]:text-right [&_pre_.line:before]:text-muted-foreground [&_pre_.line:before]:[content:counter(line)] [&_pre_.line]:[counter-increment:line]"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki generates safe HTML on server
+        dangerouslySetInnerHTML={{ __html: blob.highlightedHtml }}
+      />
+    );
+  }
+
+  // Fallback for plain text files without highlighting
+  return (
+    <div className="p-4">
+      <pre className="whitespace-pre-wrap font-mono text-sm">{content}</pre>
     </div>
   );
 }
