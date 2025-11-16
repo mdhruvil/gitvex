@@ -10,7 +10,7 @@ import { useState } from "react";
 import SignInForm from "@/components/sign-in-form";
 import SignUpForm from "@/components/sign-up-form";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_layout/dashboard")({
   component: RouteComponent,
 });
 

@@ -89,7 +89,7 @@ export function UserProfileButton() {
         <Skeleton className="h-10 w-10 rounded-full" />
       </AuthLoading>
       <Unauthenticated>
-        <Link className={buttonVariants({ size: "sm" })} to="/">
+        <Link className={buttonVariants({ size: "sm" })} to="/login">
           Sign In
         </Link>
       </Unauthenticated>

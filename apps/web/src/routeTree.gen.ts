@@ -8,15 +8,15 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createFileRoute } from '@tanstack/react-router'
-
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodosRouteImport } from './routes/todos'
-import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutNewRouteImport } from './routes/_layout/new'
+import { Route as LayoutDashboardRouteImport } from './routes/_layout/dashboard'
 import { Route as LayoutOwnerRouteImport } from './routes/_layout/$owner'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as OwnerRepoGitUploadPackRouteImport } from './routes/$owner/$repo/git-upload-pack'
@@ -36,16 +36,19 @@ import { Route as OwnerRepoLayoutViewerTreeRouteImport } from './routes/$owner/$
 import { Route as OwnerRepoLayoutViewerRawRouteImport } from './routes/$owner/$repo/_layout/_viewer/raw'
 import { Route as OwnerRepoLayoutViewerBlobRouteImport } from './routes/$owner/$repo/_layout/_viewer/blob'
 
-const OwnerRepoRouteImport = createFileRoute('/$owner/$repo')()
-
 const TodosRoute = TodosRouteImport.update({
   id: '/todos',
   path: '/todos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LayoutRoute = LayoutRouteImport.update({
@@ -57,11 +60,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OwnerRepoRoute = OwnerRepoRouteImport.update({
-  id: '/$owner/$repo',
-  path: '/$owner/$repo',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -70,6 +68,11 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
 const LayoutNewRoute = LayoutNewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutDashboardRoute = LayoutDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutOwnerRoute = LayoutOwnerRouteImport.update({
@@ -170,9 +173,11 @@ const OwnerRepoLayoutViewerBlobRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/todos': typeof TodosRoute
   '/$owner': typeof LayoutOwnerRoute
+  '/dashboard': typeof LayoutDashboardRoute
   '/new': typeof LayoutNewRoute
   '/settings': typeof LayoutSettingsRoute
   '/$owner/$repo': typeof OwnerRepoLayoutViewerRouteWithChildren
@@ -194,15 +199,17 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/todos': typeof TodosRoute
   '/$owner': typeof LayoutOwnerRoute
+  '/dashboard': typeof LayoutDashboardRoute
   '/new': typeof LayoutNewRoute
   '/settings': typeof LayoutSettingsRoute
-  '/$owner/$repo': typeof OwnerRepoLayoutIndexRoute
   '/$owner/$repo/git-receive-pack': typeof OwnerRepoGitReceivePackRoute
   '/$owner/$repo/git-upload-pack': typeof OwnerRepoGitUploadPackRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/$owner/$repo': typeof OwnerRepoLayoutIndexRoute
   '/$owner/$repo/commits': typeof OwnerRepoLayoutCommitsRoute
   '/$owner/$repo/pulls': typeof OwnerRepoLayoutPullsRoute
   '/$owner/$repo/settings': typeof OwnerRepoLayoutSettingsRoute
@@ -219,12 +226,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_layout': typeof LayoutRouteWithChildren
-  '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/todos': typeof TodosRoute
   '/_layout/$owner': typeof LayoutOwnerRoute
+  '/_layout/dashboard': typeof LayoutDashboardRoute
   '/_layout/new': typeof LayoutNewRoute
   '/_layout/settings': typeof LayoutSettingsRoute
-  '/$owner/$repo': typeof OwnerRepoRouteWithChildren
   '/$owner/$repo/_layout': typeof OwnerRepoLayoutRouteWithChildren
   '/$owner/$repo/git-receive-pack': typeof OwnerRepoGitReceivePackRoute
   '/$owner/$repo/git-upload-pack': typeof OwnerRepoGitUploadPackRoute
@@ -247,9 +255,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
+    | '/login'
+    | '/signup'
     | '/todos'
     | '/$owner'
+    | '/dashboard'
     | '/new'
     | '/settings'
     | '/$owner/$repo'
@@ -271,15 +281,17 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
+    | '/login'
+    | '/signup'
     | '/todos'
     | '/$owner'
+    | '/dashboard'
     | '/new'
     | '/settings'
-    | '/$owner/$repo'
     | '/$owner/$repo/git-receive-pack'
     | '/$owner/$repo/git-upload-pack'
     | '/api/auth/$'
+    | '/$owner/$repo'
     | '/$owner/$repo/commits'
     | '/$owner/$repo/pulls'
     | '/$owner/$repo/settings'
@@ -295,12 +307,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_layout'
-    | '/dashboard'
+    | '/login'
+    | '/signup'
     | '/todos'
     | '/_layout/$owner'
+    | '/_layout/dashboard'
     | '/_layout/new'
     | '/_layout/settings'
-    | '/$owner/$repo'
     | '/$owner/$repo/_layout'
     | '/$owner/$repo/git-receive-pack'
     | '/$owner/$repo/git-upload-pack'
@@ -323,9 +336,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LayoutRoute: typeof LayoutRouteWithChildren
-  DashboardRoute: typeof DashboardRoute
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
   TodosRoute: typeof TodosRoute
-  OwnerRepoRoute: typeof OwnerRepoRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -338,11 +351,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TodosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_layout': {
@@ -359,13 +379,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$owner/$repo': {
-      id: '/$owner/$repo'
-      path: '/$owner/$repo'
-      fullPath: '/$owner/$repo'
-      preLoaderRoute: typeof OwnerRepoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_layout/settings': {
       id: '/_layout/settings'
       path: '/settings'
@@ -378,6 +391,13 @@ declare module '@tanstack/react-router' {
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof LayoutNewRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/dashboard': {
+      id: '/_layout/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof LayoutDashboardRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/$owner': {
@@ -410,7 +430,7 @@ declare module '@tanstack/react-router' {
     }
     '/$owner/$repo/_layout': {
       id: '/$owner/$repo/_layout'
-      path: '/$owner/$repo'
+      path: ''
       fullPath: '/$owner/$repo'
       preLoaderRoute: typeof OwnerRepoLayoutRouteImport
       parentRoute: typeof OwnerRepoRoute
@@ -511,12 +531,14 @@ declare module '@tanstack/react-router' {
 
 interface LayoutRouteChildren {
   LayoutOwnerRoute: typeof LayoutOwnerRoute
+  LayoutDashboardRoute: typeof LayoutDashboardRoute
   LayoutNewRoute: typeof LayoutNewRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutOwnerRoute: LayoutOwnerRoute,
+  LayoutDashboardRoute: LayoutDashboardRoute,
   LayoutNewRoute: LayoutNewRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
 }
@@ -524,75 +546,12 @@ const LayoutRouteChildren: LayoutRouteChildren = {
 const LayoutRouteWithChildren =
   LayoutRoute._addFileChildren(LayoutRouteChildren)
 
-interface OwnerRepoLayoutViewerRouteChildren {
-  OwnerRepoLayoutViewerBlobRoute: typeof OwnerRepoLayoutViewerBlobRoute
-  OwnerRepoLayoutViewerRawRoute: typeof OwnerRepoLayoutViewerRawRoute
-  OwnerRepoLayoutViewerTreeRoute: typeof OwnerRepoLayoutViewerTreeRoute
-}
-
-const OwnerRepoLayoutViewerRouteChildren: OwnerRepoLayoutViewerRouteChildren = {
-  OwnerRepoLayoutViewerBlobRoute: OwnerRepoLayoutViewerBlobRoute,
-  OwnerRepoLayoutViewerRawRoute: OwnerRepoLayoutViewerRawRoute,
-  OwnerRepoLayoutViewerTreeRoute: OwnerRepoLayoutViewerTreeRoute,
-}
-
-const OwnerRepoLayoutViewerRouteWithChildren =
-  OwnerRepoLayoutViewerRoute._addFileChildren(
-    OwnerRepoLayoutViewerRouteChildren,
-  )
-
-interface OwnerRepoLayoutRouteChildren {
-  OwnerRepoLayoutViewerRoute: typeof OwnerRepoLayoutViewerRouteWithChildren
-  OwnerRepoLayoutCommitsRoute: typeof OwnerRepoLayoutCommitsRoute
-  OwnerRepoLayoutPullsRoute: typeof OwnerRepoLayoutPullsRoute
-  OwnerRepoLayoutSettingsRoute: typeof OwnerRepoLayoutSettingsRoute
-  OwnerRepoLayoutIndexRoute: typeof OwnerRepoLayoutIndexRoute
-  OwnerRepoLayoutCommitsCommitIdRoute: typeof OwnerRepoLayoutCommitsCommitIdRoute
-  OwnerRepoLayoutIssuesIssueNumberRoute: typeof OwnerRepoLayoutIssuesIssueNumberRoute
-  OwnerRepoLayoutIssuesNewRoute: typeof OwnerRepoLayoutIssuesNewRoute
-  OwnerRepoLayoutIssuesIndexRoute: typeof OwnerRepoLayoutIssuesIndexRoute
-}
-
-const OwnerRepoLayoutRouteChildren: OwnerRepoLayoutRouteChildren = {
-  OwnerRepoLayoutViewerRoute: OwnerRepoLayoutViewerRouteWithChildren,
-  OwnerRepoLayoutCommitsRoute: OwnerRepoLayoutCommitsRoute,
-  OwnerRepoLayoutPullsRoute: OwnerRepoLayoutPullsRoute,
-  OwnerRepoLayoutSettingsRoute: OwnerRepoLayoutSettingsRoute,
-  OwnerRepoLayoutIndexRoute: OwnerRepoLayoutIndexRoute,
-  OwnerRepoLayoutCommitsCommitIdRoute: OwnerRepoLayoutCommitsCommitIdRoute,
-  OwnerRepoLayoutIssuesIssueNumberRoute: OwnerRepoLayoutIssuesIssueNumberRoute,
-  OwnerRepoLayoutIssuesNewRoute: OwnerRepoLayoutIssuesNewRoute,
-  OwnerRepoLayoutIssuesIndexRoute: OwnerRepoLayoutIssuesIndexRoute,
-}
-
-const OwnerRepoLayoutRouteWithChildren = OwnerRepoLayoutRoute._addFileChildren(
-  OwnerRepoLayoutRouteChildren,
-)
-
-interface OwnerRepoRouteChildren {
-  OwnerRepoLayoutRoute: typeof OwnerRepoLayoutRouteWithChildren
-  OwnerRepoGitReceivePackRoute: typeof OwnerRepoGitReceivePackRoute
-  OwnerRepoGitUploadPackRoute: typeof OwnerRepoGitUploadPackRoute
-  OwnerRepoInfoRefsRoute: typeof OwnerRepoInfoRefsRoute
-}
-
-const OwnerRepoRouteChildren: OwnerRepoRouteChildren = {
-  OwnerRepoLayoutRoute: OwnerRepoLayoutRouteWithChildren,
-  OwnerRepoGitReceivePackRoute: OwnerRepoGitReceivePackRoute,
-  OwnerRepoGitUploadPackRoute: OwnerRepoGitUploadPackRoute,
-  OwnerRepoInfoRefsRoute: OwnerRepoInfoRefsRoute,
-}
-
-const OwnerRepoRouteWithChildren = OwnerRepoRoute._addFileChildren(
-  OwnerRepoRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LayoutRoute: LayoutRouteWithChildren,
-  DashboardRoute: DashboardRoute,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
   TodosRoute: TodosRoute,
-  OwnerRepoRoute: OwnerRepoRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
