@@ -215,17 +215,51 @@ The DO's `fetch()` method routes requests:
 
 File: `apps/web/src/do/cache.ts`
 
-Read operations (commits, tree, blob, commit details) are cached using Cloudflare's Cache API:
-- Cache namespace: `gitflare:json`
-- TTL: 1 year (31536000 seconds)
-- Cache key: constructed from repo full name + operation type + parameters (ref, path, resolved OID, latest commit OID)
-- The latest commit OID is included in cache key params to implicitly invalidate stale entries when new commits are pushed.
+Read operations are cached using **Cloudflare's Cache API** (the same cache that powers the CDN edge cache). The cache module exposes three functions: `getJson`, `putJson`, and `getOrSetJson` (a read-through cache helper).
 
-Cached operations:
-- `getCommits` — Commit log
-- `getTree` — Tree with last commit per entry
-- `getBlob` — File content
-- `getCommit` — Commit details with file changes
+#### Cache namespace
+
+A named cache partition is opened via `caches.open("gitflare:json")`. This isolates gitflare's cached data from other workers on the same edge.
+
+#### Cache key construction
+
+Cache keys are built as URLs (required by the Cache API) using the pattern:
+
+```
+{SITE_URL}/__cache/{key}?{params}
+```
+
+- The `key` is the base identifier (e.g., `owner/repo/commits`, `owner/repo/blob`, `owner/repo/commit/<oid>`). A leading `/` is added if missing.
+- `params` are serialized as URL query parameters. Only non-undefined values are included.
+- `SITE_URL` is the worker's site URL binding, ensuring keys are unique per deployment (production vs. preview vs. local).
+
+#### TTL and headers
+
+Cached responses are stored with:
+- `Content-Type: application/json`
+- `Cache-Control: public, max-age=<ttl>` — default TTL is 1 year (31,536,000 seconds). No per-operation TTL overrides are currently used.
+
+#### Null/undefined handling
+
+`getOrSetJson` does not cache `null` or `undefined` values. If the fetcher returns null (e.g., a blob that doesn't exist), the result is returned without caching, so subsequent requests will re-fetch.
+
+#### Cached operations
+
+Each cached operation uses a different invalidation strategy via its cache key params:
+
+| Operation | Cache Key | Params | Invalidation Strategy |
+|-----------|-----------|--------|----------------------|
+| `getCommits` | `{fullName}/commits` | `ref`, `depth`, `filepath`, `latestCommitOid` | Includes the latest commit OID on the branch. When a new commit is pushed, the latest commit OID changes, producing a new cache key. Old entries expire after 1 year. |
+| `getTree` | `{fullName}/treeWithLastCommit` | `resolvedRef`, `path` | Keyed by the resolved ref OID. When the ref is updated (new commit), the resolved OID changes, producing a new cache key. |
+| `getBlob` | `{fullName}/blob` | `resolvedRef`, `filepath` | Same as tree — keyed by resolved ref OID, so new commits invalidate the cache. |
+| `getCommit` | `{fullName}/commit/{commitOid}` | _(none)_ | Keyed directly by commit OID. Commits are immutable, so this cache never needs invalidation. |
+
+#### What is NOT cached
+
+- `getLatestCommit` — Always fetched fresh (used as the invalidation key for `getCommits`).
+- `getBranches` — Always fetched fresh.
+- All git protocol operations (`uploadPack`, `receivePack`) — Never cached; they operate on live git data.
+- `listRefs` (used during protocol advertisement) — Never cached.
 
 ### Additional DO methods (for web UI)
 
